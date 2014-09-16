@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	 <meta charset="utf-8">
+	 <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+	 <title>D3 Server-side Demo</title>
+	 <style type="text/css">
+	body {
+		 background-color: #f5f5f5;
+		 font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+		 font-size: 12px;
+		 height: 100%;
+		 width: 100%;
+		 margin: 0;
+		 padding: 0;
+	
+	 }
+		 html {
+		 height: 100%;
+		 width: 100%;
+		 margin: 0;
+		 padding: 0;
+	 }
+		 </style>
+	<script src="jquery.min.js"></script>
+	<script type="text/javascript" src="handlebars.min.js"></script>
+	<script id="job_loading_template" type="text/x-handlebars-template">
+		<div data-job_id="{{ job_id }}" style="border: 1px black solid; padding: 8px">
+			{{> job_loading_content_template}}
+		</div>
+	</script>
+	<script id="job_loading_content_template" type="text/x-handlebars-template">
+			<h3>Job: {{ job_id }}</h3>
+			<h5>State: <span role="state">{{ state }}</span></h4>
+			<h5>Message: <span role="message">{{ message }}</span></h4>
+			<h5>JSON: </h4>
+			<pre>
+			{{json}}
+			</pre>
+			<img src="ajax-loader.gif" />
+	</script>
+	<script id="job_complete_template" type="text/x-handlebars-template">
+			<h3>Date: {{ now }}</h3>
+			<h3>Job: {{ job_id }}</h3>
+			<h3>Interactive:</h3>
+				<iframe src="job/{{job_id}}/interactive" style="width: 100%; height: 500px;"></iframe>
+			<h3>SVG:</h3>
+				<object  data="/job/{{job_id}}/svg" type="image/svg+xml" width="611" height="320" >
+				</object>
+			<h3>PNG:</h3>
+				<img src="/job/{{job_id}}/png" />
+			
+			<h3>Request:</h3>
+			<pre>{{ request }}</pre>
+	</script>
+	<script type="text/javascript">
+		var defaultRequests = [
+		{
+				"plot" : {
+					"type" : "timeseries",
+					"title" : "Penlee Temperature",
+					"style" : "basic",
+					"data" : {
+						"series" : [
+							{
+								"handler" : "SingleStation_SERVICE_SOS",
+								"data_source" : {
+									"coverage"  : "T",
+									"t_bounds"  : ["2014-09-03T01:00:00","2014-09-03T12:00:00"],
+									"station_name"	: "urn:ioos:station:Plymouth Marine Laboratory:Penlee",							
+									"threddsUrl"  : "http://vortex4.npm.ac.uk:8080/thredds-restricted/sos/penlee/met-agg.nc",
+								},
+								"sub_series" : [
+									{
+										"label" : "Air Temperature; degrees Celcius",
+										"observed_property"  : "air_temperature",
+										"yAxis": 1,
+										"type": "line",
+									},
+									{
+										"label" : "Dew Point; degrees Celcius",
+										"observed_property"  : "dew_point_temperature",
+										"yAxis": 2,
+										"type": "line",
+									},
+								]
+							}
+						]
+					},
+					"xAxis" : {
+						"label" : "Sample Date/Time",
+						"ticks" : "d3.time.minute, 60",
+						"weight" : "auto",
+						"tickFormat" : "%d/%m/%Y %H:%M"
+					}, 
+					"y1Axis" : {
+						"scale" : "linear", //( linear | log_scale | ordinal | time)
+						"label" : "Air Temperature",
+						"ticks" : "auto",
+						"weight" : "auto",
+						"tickFormat" : ",.3f"
+					},
+					"y2Axis" : {
+						"scale" : "linear",
+						"label" : "Dew Point",
+						"ticks" : "auto",
+						"weight" : "auto",
+						"tickFormat" : ",.3f"
+					}
+				}
+			},
+
+
+		{
+				"plot" : {
+					"type" : "timeseries",
+					"title" : "A Test Timeseries - Very Long Wait",
+					"style" : "basic",
+					"data" : {
+						"series" : [
+							{
+								"handler" : "OPEC_SERVICE_WCS",
+								"data_source" : {
+									"coverage"  : "Rainf",
+									"t_bounds"  : ["2010-01-01T19:43:37","2010-02-01T19:43:37"],
+									"geo_bounds": [],
+									
+									"threddsUrl"  : "https://wci.earth2observe.eu/thredds/wcs/ecmwf/met_forcing_v0/rainf_3hourly.nc?",
+									"metaCacheUrl" : 'https://wci.earth2observe.eu/portal/cache/layers/ecmwf_forcing_rainf_Rainf.json',
+									"middlewareUrl" : 'https://wci.earth2observe.eu/service/wcs'
+								},
+								"sub_series" : [
+									{
+										"label" : "Oxygen Min",
+										"key"  : "min",
+										"yAxis": 1,
+										"type": "line",
+									},
+									{
+										"label" : "Oxygen Max",
+										"key"  : "max",
+										"yAxis": 1,
+										"type": "line",
+									},
+								]
+							}
+						]
+					},
+					"xAxis" : {
+						"label" : "Time - ISO blah",
+						"ticks" : "auto",
+						"weight" : "auto",
+						"tickFormat" : "%x"
+					}, 
+					"y1Axis" : {
+						"scale" : "log", //( linear | log_scale | ordinal | time)
+						"label" : "Oxygen mg",
+						"ticks" : "auto",
+						"weight" : "auto",
+						"tickFormat" : ",.2f"
+					}
+				}
+			},
+
+		{
+				"plot" : {
+					"type" : "timeseries",
+					"title" : "A Test Timeseries - Multiple Series - Line Bar",
+					"style" : "basic",
+					"data" : {
+						"series" : [
+							{
+								"handler" : "OPEC_SERVICE_WCS",
+								"data_source" : {
+									"coverage"  : "T",
+									"t_bounds"  : ["2010-06-06T19:43:37","2013-08-27T19:43:37"],
+									"geo_bounds": [],
+									"depth": "-1.0",
+									
+									"threddsUrl"  : "https://rsg.pml.ac.uk/thredds/wcs/PML_GEN_M?",
+									"metaCacheUrl" : 'http://portaldev.marineopec.eu/cache/layers/pml_monthly_T.json',
+									"middlewareUrl" : 'http://portaldev.marineopec.eu/service/wcs'
+								},
+								"sub_series" : [
+									{
+										"label" : "Oxygen Min",
+										"key"  : "min",
+										"yAxis": 1,
+										"type": "line",
+									},
+									{
+										"label" : "Oxygen Max",
+										"key"  : "max",
+										"yAxis": 2,
+										"type": "bar",
+									},
+								]
+							}
+						]
+					},
+					"xAxis" : {
+						"label" : "Time - ISO blah",
+						"ticks" : "auto",
+						"weight" : "auto",
+						"tickFormat" : "%x"
+					}, 
+					"y1Axis" : {
+						"scale" : "log", //( linear | log_scale | ordinal | time)
+						"label" : "Oxygen mg",
+						"ticks" : "auto",
+						"weight" : "auto",
+						"tickFormat" : ",.2f"
+					},
+					"y2Axis" : {
+						"scale" : "linear",
+						"label" : "Rrs_412 kg",
+						"ticks" : "auto",
+						"wieght" : "auto",
+						"tickFormat" : ",.2f"
+					}
+				}
+			},
+			{
+				"plot" : {
+					"type" : "timeseries",
+					"title" : "A Test Timeseries - Multiple Series - Line Line",
+					"style" : "basic",
+					"data" : {
+						"series" : [
+						/*
+							{
+								"handler" : "OPEC_SERVICE_WCS",
+								"y-axis" : 1,
+								"data_source" : {
+									"coverage"  : "T",
+									"t_bounds"  : ["2000-06-06T19:43:37","2013-08-27T19:43:37"],
+									"geo_bounds": [],
+									//"depth": "-1.0",
+									
+									"threddsUrl"  : "https://rsg.pml.ac.uk/thredds/wcs/PML_GEN_M?",
+									"metaCacheUrl" : 'http://portaldev.marineopec.eu/cache/layers/pml_monthly_T.json',
+									"middlewareUrl" : 'http://portaldev.marineopec.eu/service/wcs'
+								},
+								"sub_series" : [ 
+									{
+										"label" : "Oxygen Mean",
+										"key"  : "mean",
+										"yAxis": 2,
+										"type": "line",
+									}
+								]
+							},
+							{
+								"handler" : "OPEC_SERVICE_WCS",
+								"data_source" : {
+									"coverage"  : "T",
+									"t_bounds"  : ["2010-06-06T19:43:37","2013-08-27T19:43:37"],
+									"geo_bounds": [],
+									"depth": "-1.0",
+									
+									"threddsUrl"  : "https://rsg.pml.ac.uk/thredds/wcs/PML_GEN_M?",
+									"metaCacheUrl" : 'http://portaldev.marineopec.eu/cache/layers/pml_monthly_T.json',
+									"middlewareUrl" : 'http://portaldev.marineopec.eu/service/wcs'
+								},
+								"sub_series" : [
+									{
+										"label" : "Oxygen Min",
+										"key"  : "min",
+										"yAxis": 1,
+										"type": "line",
+									},
+									{
+										"label" : "Oxygen Max",
+										"key"  : "max",
+										"yAxis": 1,
+										"type": "line",
+									},
+								]
+							},
+							*/
+							{
+								"handler" : "OPEC_SERVICE_WCS",
+								"data_source" : {
+									"coverage"  : "T",
+									"t_bounds"  : ["2008-06-06T19:43:37","2013-08-27T19:43:37"],
+									"geo_bounds": [],
+									"depth": "-1.0",
+									
+									"threddsUrl"  : "https://rsg.pml.ac.uk/thredds/wcs/PML_GEN_M?",
+									"metaCacheUrl" : 'http://portaldev.marineopec.eu/cache/layers/pml_monthly_T.json',
+									"middlewareUrl" : 'http://portaldev.marineopec.eu/service/wcs'
+								},
+								"sub_series" : [
+									{
+										"label" : "Oxygen Median",
+										"key"  : "median",
+										"yAxis": 2,
+										"type": "line",
+									},
+									{
+										"label" : "Oxygen Mean",
+										"key"  : "mean",
+										"yAxis": 2,
+										"type": "line",
+									},
+									{
+										"label" : "Oxygen Min",
+										"key"  : "min",
+										"yAxis": 1,
+										"type": "line",
+									},
+									{
+										"label" : "Oxygen Max",
+										"key"  : "max",
+										"yAxis": 1,
+										"type": "line",
+									},
+								]
+							},
+							
+						]
+					},
+					"xAxis" : {
+						"label" : "Time - ISO blah",
+						"ticks" : "auto",
+						"weight" : "auto",
+						"tickFormat" : "%x"
+					}, 
+					"y1Axis" : {
+						"scale" : "log", //( linear | log_scale | ordinal | time)
+						"label" : "Oxygen mg",
+						"ticks" : "auto",
+						"weight" : "auto",
+						"tickFormat" : ",.2f"
+					},
+					"y2Axis" : {
+						"scale" : "linear",
+						"label" : "Rrs_412 kg",
+						"ticks" : "auto",
+						"wieght" : "auto",
+						"tickFormat" : ",.2f"
+					}
+				}
+			}
+		]
+		
+		
+		$(function(){
+			
+			var select = $('<select>').appendTo('#get-graph').change(function(){
+				$('#get-graph').submit();
+			});
+			
+			for( var i in defaultRequests){
+				var request =  defaultRequests[ i ];
+				select.append('<option value="' + i + '">' + request.plot.title + '</option');
+			}
+			
+			
+			Templates = {};
+			
+			$('script[id*="template"]').each(function( i ,e ){
+				Templates[ $(e).attr('id') ] = Handlebars.compile( $(e).html() );
+				Handlebars.registerPartial( $(e).attr('id') ,  $(e).html());
+			})
+			
+			function waitForGraph( job_id, request ){
+				var startTime = new Date();
+				
+				var intervalId = setInterval(function(){
+					$.ajax({
+						'url': '/job/' + job_id + "/status",
+						'dataType': 'json',
+						'method': 'get',
+						complete : function( response ){
+							var currentTime = new Date();
+							
+							try{
+								var data = JSON.parse( response.responseText );
+								data.json = JSON.stringify( data, null, 3 );
+								$('[data-job_id="'+job_id+'"]').html( Templates.job_loading_content_template( data ) );
+								
+								if( data.completed == false && (currentTime - startTime) / 1000 < 240 )
+									return ;
+								
+							}catch( e ){
+								var data = {};
+							};
+							
+							clearInterval(intervalId );
+									
+							if( data.state == 'success' ){
+								var container = $('[data-job_id="'+job_id+'"]').html( Templates.job_complete_template( {
+									job_id : job_id,
+									request: JSON.stringify( request , undefined, 3),
+									now: (new Date).toString()
+								} ) );
+							}else{
+								
+								$('[data-job_id="'+job_id+'"]').html( 'Request timed out : ' + new Date() );
+								throw "Job " + job_id + " failed";
+							}
+						}
+					})
+					
+				}, 1000);
+			}
+			
+			$('#get-graph').submit(function(){
+				var request = defaultRequests [ $('select option:selected').val() ];
+				$.ajax({
+					'url': '/plot',
+					'data': JSON.stringify( request ),
+					'dataType': 'json',
+					'method': 'post',
+					success : function( data ){
+						var templateData = {
+							job_id: data.job_id,
+							message: "{{Waiting for update}}",
+						}
+						
+						$('#data').prepend( Templates.job_loading_template( templateData ) );
+						
+						waitForGraph( data.job_id, request );
+					}
+				});
+				return false;
+			});
+			
+		})
+	</script>
+</head>
+
+<body>
+	 <h1>D3 Server-side Demo</h1>
+	 
+	 <form id="get-graph">
+	 	<input type="submit" value="Generate" />
+	 </form>
+	 <div id="data">
+	 
+	 </div>
+	 
+</body>
+</html>

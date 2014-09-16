@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="/nv.d3.css" rel="stylesheet" type="text/css">
+		<script src="/d3.js"></script>
+		<script src="/nv.d3.js"></script>
+		<script src="/es5.js"></script>
+		<style>
+			body{
+				margin: 0px;
+			}
+		</style>
+		<script>
+			
+			function onWindowLoad(func){
+				if (window.addEventListener) {
+				    window.addEventListener("load", func, false);
+				}
+				else {
+				    window.attachEvent("onload", func);
+				}
+			}
+			function onWindowResize(func){
+				if (window.addEventListener) {
+				    window.addEventListener("resize", func, false);
+				}
+				else {
+				    window.attachEvent("onresize", func);
+				}
+			}
+			
+			var container = 'svg';
+			
+			var width = <%- width %>;
+			var height = <%- height %>;
+			var interactive = <%- interactive ? "true":"false" %>;
+			
+			onWindowLoad(function(){
+				
+				document.getElementById('chart').setAttribute('xmlns', "http://www.w3.org/2000/svg");
+				/*
+				if( interactive ){
+					document.getElementById('chart').setAttribute('style', 'position: absolute; top: 0px; bottom: 0px; left: 0px; right: 0px;');
+				}else{
+					document.getElementById('chart').setAttribute('style', 'width: ' + width + 'px; height: ' + height + 'px; ');
+					document.getElementById('chart').setAttribute('viewBox', '0 0 ' + width + ' ' + height)
+				}
+				*/	
+				
+				
+				function resize(){
+					document.getElementById('chart').setAttribute('style', 'width: ' + window.innerWidth + 'px; height: ' + window.innerHeight + 'px; ');
+					document.getElementById('chart').setAttribute('viewBox', '0 0 ' + window.innerWidth + ' ' + window.innerHeight)
+					
+				}
+				
+				onWindowResize(resize);
+				resize();
+			})
+			
+			<%- graphJavascript %>
+			
+			onWindowLoad(function(){
+				nv.addGraph( makeGraph );
+				setTimeout(function(){
+					console.log('graph-loaded');
+					window.postMessage('graph-loaded', '*');
+				}, 10);
+			});
+		</script>
+	</head>
+	<body>
+		<svg id="chart" ></svg>
+	</body>
+</html>

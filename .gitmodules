@@ -1,0 +1,3 @@
+[submodule "lib/nvd3"]
+	path = lib/nvd3
+	url = https://github.com/pmlrsg/nvd3.git
