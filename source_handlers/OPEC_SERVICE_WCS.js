@@ -198,7 +198,7 @@ OPEC_Service.prototype.buildSourceUrl = function( dataSource ){
 		return date.toISOString();
 	}).join( '/' );
 	
-	queryData.bbox = dataSource.geo_bounds.join(",");
+	queryData.bbox = dataSource.bbox;
 	queryData.depth = dataSource.depth;
 	
 	var url =  this._middlewareUrl + "?" + querystring.stringify( queryData );
