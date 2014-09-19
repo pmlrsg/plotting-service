@@ -183,7 +183,7 @@ SOS_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 			var v = values[value].split( this._tokenSeparator );
 			var point = {
 				x : v[0],
-				y : v[parseInt(i)+1]	// the sub-series index plus one to take into account the date always being at position 0 in the block
+				y : parseFloat(v[parseInt(i)+1])	// the sub-series index plus one to take into account the date always being at position 0 in the block
 			}
 
 			newSeries.values.push( point );
@@ -196,7 +196,7 @@ SOS_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 		//Add the new series to the list of others
 		this._formatedSeries.push( newSeries );
 	}
-	console.log(this._formatedSeries);
+	//console.log(this._formatedSeries);
 }
 
 /**
