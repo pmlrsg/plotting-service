@@ -33,8 +33,14 @@ app.engine('.html', require('ejs').__express);
 app.set('views', __dirname  + '/html');
 app.set('view engine', 'html');
 
-app.use(app.router);
+app.use(function (req, res, next) {
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+	res.setHeader('Access-Control-Allow-Headers', '*');
+	next();
+});
 
+app.use(app.router);
 
 /**
 * Allows Express URL paramaters to accept regex
