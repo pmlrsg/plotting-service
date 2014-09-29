@@ -407,9 +407,7 @@
 					
 				}, 1000);
 			}
-			
-			$('#get-graph').submit(function(){
-				var request = defaultRequests [ $('select option:selected').val() ];
+			function submitRequest( request ){
 				$.ajax({
 					'url': '/plot',
 					'data': JSON.stringify( request ),
@@ -426,7 +424,17 @@
 						waitForGraph( data.job_id, request );
 					}
 				});
+			}
+			$('#get-graph').submit(function(){
+				var request = defaultRequests [ $('select option:selected').val() ];
+				submitRequest( request )
 				return false;
+			});
+
+			$('#customSubmit').click(function(){
+				var json = JSON.parse(prompt( "JSON" ));
+				if( json )
+					submitRequest( json );
 			});
 			
 		})
@@ -438,6 +446,7 @@
 	 
 	 <form id="get-graph">
 	 	<input type="submit" value="Generate" />
+	 	<button id="customSubmit" type="button">Custom</button>
 	 </form>
 	 <div id="data">
 	 

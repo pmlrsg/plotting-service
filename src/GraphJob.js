@@ -68,7 +68,7 @@ GraphJob.prototype.serveAnswer = function( format, req, res ){
 		res.send( 404, 'Job still processing' );
 	
 	// Has the job completed with success
-	if( _this._status.state == 'success' || _this._status.state == 'testing' ){
+	if( _this._status.state == 'success' || _this._status.state == 'testing' || req.query.debug == "true" ){
 		
 		switch( format ){
 			case "png":

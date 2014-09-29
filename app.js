@@ -95,7 +95,7 @@ app.get('/es5.js', function(req,res){ return res.sendfile('./graphs/es5.js'); })
 app.get('/jquery.min.js', function(req,res){ return res.sendfile('./html/jquery.min.js'); });
 app.get('/nv.d3.js', function(req,res){ return res.sendfile('./lib/nvd3/nv.d3.js'); });
 app.get('/nv.d3.css', function(req,res){ return res.sendfile('./lib/nvd3/nv.d3.css'); });
-app.get('/d3.js', function(req,res){ return res.sendfile('./node_modules/d3/d3.js'); });
+app.get('/d3.js', function(req,res){ return res.sendfile('./lib/nvd3/lib/d3.v3.js'); });
 
 
 function makeDomain( options ){
@@ -109,19 +109,23 @@ function makeDomain( options ){
 		domain.res = options.res;
 	
 	domain.on('error', function( err ){
-		
-		var meta =  { error_message : err.toString(), error_stack : err.stack };
-		
-		if(  Domain.active.job != void( 0 ) )
-			meta['job_id'] =  Domain.active.job.id();
-		
-		extend( meta, err.meta || {} );
-		logger.log('error',  err.message, meta);
-		
-		if( Domain.active.res != void( 0 ) ){
-			res.send( 500, 'Generating the graph failed:<br>\n' + err.message );
-			res.end();
-		}
+		try{
+			var meta =  { error_message : err.toString(), error_stack : err.stack };
+			
+			if(  Domain.active.job != void( 0 ) )
+				meta['job_id'] =  Domain.active.job.id();
+			
+			extend( meta, err.meta || {} );
+			logger.log('error',  err.message, meta);
+			
+			if( Domain.active.res != void( 0 ) ){
+				res.send( 500, 'Generating the graph failed:<br>\n' + err.message );
+				res.end();
+			}
+		}catch(e){
+			logger.log('error',  "Reporting domain error failed", { error: e });
+
+		};
 		domain.dispose();
 	});
 	return domain;
@@ -148,6 +152,8 @@ app.post('/plot', function(req, res) {
 	
 		var url_parts = url.parse(req.url, true);
 		var query = url_parts.query;
+		
+		logger.log('info', body);
 		
 		var post = JSON.parse(body);
 

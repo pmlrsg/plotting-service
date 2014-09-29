@@ -236,7 +236,7 @@ Graph.prototype.svg = function( callback ){
 Graph.prototype.html = function(callback, settings ){
 	
 	var defaultSettings = {
-		interactive : true,
+		interactive : true, 
 		series : this._series,
 		request: this._request,
 		width: this._width,

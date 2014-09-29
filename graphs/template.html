@@ -2,6 +2,7 @@
 <html>
 	<head>
 		<meta charset="utf-8">
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 		<link href="/nv.d3.css" rel="stylesheet" type="text/css">
 		<script src="/d3.js"></script>
 		<script src="/nv.d3.js"></script>
@@ -10,9 +11,26 @@
 			body{
 				margin: 0px;
 			}
+			#logos{
+				position: fixed;
+				top: 0px;
+				left: 0px;
+				padding: 4px;
+			}
+			#logos img{
+				max-width: 100px;
+				max-height: 70px;
+				float: left;
+			}
 		</style>
 		<script>
-			
+
+			var container = '#chart';
+			var containerId = 'chart';
+
+			/**
+			 * Cross browser method to add onLoad event handlers
+			 */
 			function onWindowLoad(func){
 				if (window.addEventListener) {
 				    window.addEventListener("load", func, false);
@@ -21,56 +39,104 @@
 				    window.attachEvent("onload", func);
 				}
 			}
+
+			/**
+			 * Cross browser method to add onResive event handlers
+			 */
 			function onWindowResize(func){
-				if (window.addEventListener) {
+				if (window.addEventListener)
 				    window.addEventListener("resize", func, false);
-				}
-				else {
+				else
 				    window.attachEvent("onresize", func);
-				}
+			}
+
+
+			function resize(){
+				var titleHeight = $('#title' ).outerHeight(true);
+
+				var newWidth = window.innerWidth;
+				var newHeight = window.innerHeight - titleHeight;
+				$( container )
+					.attr('style', 'width: ' + newWidth + 'px; height: ' + newHeight + 'px; ')
+					.attr('viewBox', '0 0 ' + newWidth + ' ' + newHeight);
+			}
+
+			/**
+			 * Sorts the logos disabled by height for style reasons
+			 *  - Will not work in IE8
+			 */
+			function reorderLogos(){
+				// Abort if getComputeStyle isnt allowed
+				try{
+					if( ! document.defaultView || ! document.defaultView.getComputedStyle )
+						return;
+
+					var logosElement = document.getElementById( 'logos' );
+					var children = [];
+					for ( var i in logosElement.children){
+						if( logosElement.children[i] instanceof HTMLElement )
+							children.push( logosElement.children[i] );
+					}
+
+					children.sort(function( imgElementA, imgElementB ){
+						var heightA = $( imgElementA ).height();
+						var heightB = $( imgElementB ).height();
+						return heightA < heightB ? 1: -1;
+					}).forEach(function( imgElement ){
+						logosElement.appendChild( imgElement );
+					});
+				}catch(e){};
+			}
+
+			function addLogos( logos ){
+				logos.forEach(function( logo ){
+					var img = document.createElement( 'img' );
+					img.onload = reorderLogos;
+					img.src = logo;
+					document.getElementById( 'logos' ).appendChild( img );
+				});
+			};
+
+			function addTitle( title ){
+				d3.select( document.body )
+				  .insert("h2", ":first-child")
+				  .attr("style", "text-align: center;")
+				  .attr("id", "title")
+				  .text(title);
+
+				resize();
 			}
 			
-			var container = 'svg';
 			
+			// These are populated from Node			
 			var width = <%- width %>;
 			var height = <%- height %>;
+			var series = <%- JSON.stringify( series ) %>;
+			var request = <%- JSON.stringify( request ) %>;
 			var interactive = <%- interactive ? "true":"false" %>;
-			
+
+			// This code means the graph will always be the size of the window/iframe
 			onWindowLoad(function(){
-				
-				document.getElementById('chart').setAttribute('xmlns', "http://www.w3.org/2000/svg");
-				/*
-				if( interactive ){
-					document.getElementById('chart').setAttribute('style', 'position: absolute; top: 0px; bottom: 0px; left: 0px; right: 0px;');
-				}else{
-					document.getElementById('chart').setAttribute('style', 'width: ' + width + 'px; height: ' + height + 'px; ');
-					document.getElementById('chart').setAttribute('viewBox', '0 0 ' + width + ' ' + height)
-				}
-				*/	
-				
-				
-				function resize(){
-					document.getElementById('chart').setAttribute('style', 'width: ' + window.innerWidth + 'px; height: ' + window.innerHeight + 'px; ');
-					document.getElementById('chart').setAttribute('viewBox', '0 0 ' + window.innerWidth + ' ' + window.innerHeight)
-					
-				}
-				
 				onWindowResize(resize);
 				resize();
-			})
+			});
 			
+			// This is the script required to build the request graph type
 			<%- graphJavascript %>
 			
+			// Once everything has loaded build the graph
 			onWindowLoad(function(){
 				nv.addGraph( makeGraph );
-				setTimeout(function(){
-					console.log('graph-loaded');
-					window.postMessage('graph-loaded', '*');
-				}, 10);
+				if( request.style && request.style.logos )
+					addLogos( request.style.logos );
+
+				if( request.plot && request.plot.title )
+					addTitle( request.plot.title );
 			});
 		</script>
 	</head>
 	<body>
-		<svg id="chart" ></svg>
+		<div id="logos"></div>
+		<svg id="chart" xmlns="http://www.w3.org/2000/svg" ></svg>
 	</body>
 </html>

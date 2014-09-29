@@ -151,6 +151,7 @@ OPEC_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 			key : subSeries.label, //graph name
 			type : subSeries.type, //graph type (line|bar|etc...)
 			yAxis : subSeries.yAxis, //graph axis
+			disabled : subSeries.disabled === true ? true:false,
 			values: [], // place to store the points
 		};
 		
@@ -200,6 +201,14 @@ OPEC_Service.prototype.buildSourceUrl = function( dataSource ){
 	
 	queryData.bbox = dataSource.bbox;
 	queryData.depth = dataSource.depth;
+
+	if( typeof dataSource.bbox == 'string' ){
+		if( dataSource.bbox.match(/POLYGON/i) )
+			queryData.isPolygon = true;
+		if( dataSource.bbox.match(/LINESTRING/i) )
+			queryData.isLine = true;
+	};
+
 	
 	var url =  this._middlewareUrl + "?" + querystring.stringify( queryData );
 	
