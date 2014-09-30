@@ -321,7 +321,7 @@ Graph.prototype.loadGraphInPhantomPage = function( callback, width, height ){
 				}));
 				*/
 				//Load the noninteractive graph
-				data.page.open( config.serverAddress + 'job/' + domain.job.id() + '/noninteractive' , function(status) {
+				data.page.open( config.serverAddress + '/job/' + domain.job.id() + '/noninteractive' , function(status) {
 					next();
 				});
 			}));
