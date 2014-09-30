@@ -8,6 +8,11 @@ Server to remotely render graphs from various datasets in verious formats.
 * GCC Compiler - the d3 node module uses jsdom which requires a C++ compiler:
 [https://github.com/tmpvar/jsdom#contextify](https://github.com/tmpvar/jsdom#contextify)
 
+## Install
+- npm install
+- cp example_config.js config.js
+- Edit config.js changed the `serverAddress`
+- Start with `node app.js`
 
 ## Getting Started
 
