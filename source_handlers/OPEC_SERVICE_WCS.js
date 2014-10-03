@@ -75,8 +75,15 @@ function OPEC_Service( type, series, domain ){
 			
 			if (err || response.statusCode != 200){
 				if( ! err )
-					err = new Error("Invalid status code " + response.statusCode);
-			   	err.message = 'Server did not return a valid reply :  \n -- ' + err.message;
+					switch( response.statusCode ){
+						case 400:
+							err = new Error("There was no data in your request area.");
+							break;
+						default:
+							err = new Error("Invalid status code " + response.statusCode);
+					   	break;
+					}
+					err.message = 'Server did not return a valid reply :  \n -- ' + err.message;   	
 			   	err.meta = { reply : body, url: url }
 			   	throw err;
 		   }
