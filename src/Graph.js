@@ -14,7 +14,11 @@ function phantomPage( callback ){
 		setTimeout(function(){
 			ph.exit();
 		}, 60000);
+
 		ph.createPage(function( page ){
+			page.exitPhantom = function(){
+				ph.exit();
+			};
 			callback( page );
 		})
 	})
@@ -103,7 +107,7 @@ Graph.prototype.init = function(  ) {
 			}, function( results ){
 				var errorResult = results.validation[0];
 				var errorMessage = results.validation[1];
-				
+				page.exitPhantom();
 				
 				if( errorResult === true ){
 					_this._graphComplexity = results.graphComplexity;
@@ -408,7 +412,7 @@ Graph.prototype.svg = function( callback, width, height ){
 					throw new Error("SVG failed to render in PhantomJs");
 					
 				data.svg = result;
-				
+				data.page.exitPhantom();
 				next();
 			}, data.css);
 		}))
@@ -481,7 +485,7 @@ Graph.prototype.png = function( callback, width, height ) {
 		*/
 		.then(function( next ){
 			callback( data.pngPath );
-				
+				data.page.exitPhantom();
 			next();
 		})
 
