@@ -11,6 +11,9 @@ var Phantom = require('phantom');
 
 function phantomPage( callback ){
 	Phantom.create(function(ph){
+		setTimeout(function(){
+			ph.exit();
+		}, 60000);
 		ph.createPage(function( page ){
 			callback( page );
 		})
@@ -100,6 +103,7 @@ Graph.prototype.init = function(  ) {
 			}, function( results ){
 				var errorResult = results.validation[0];
 				var errorMessage = results.validation[1];
+				
 				
 				if( errorResult === true ){
 					_this._graphComplexity = results.graphComplexity;
@@ -355,7 +359,7 @@ Graph.prototype.svg = function( callback, width, height ){
 		
 		.then(domain.bind(function( next ){
 			_this.loadGraphInPhantomPage(function( page ){
-				data.page = page
+				data.page = page;
 				next();
 			},width, height);
 		}))
@@ -404,6 +408,7 @@ Graph.prototype.svg = function( callback, width, height ){
 					throw new Error("SVG failed to render in PhantomJs");
 					
 				data.svg = result;
+				
 				next();
 			}, data.css);
 		}))
@@ -476,6 +481,7 @@ Graph.prototype.png = function( callback, width, height ) {
 		*/
 		.then(function( next ){
 			callback( data.pngPath );
+				
 			next();
 		})
 
