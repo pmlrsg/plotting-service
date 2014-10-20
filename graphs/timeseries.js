@@ -117,12 +117,11 @@ function autoScale( axis ){
 		decimals: 2
 	};
 
+
+   // Function which will check whether if the axis
+   // is rendered to {decimals} place, will the axis
 	function willDecimalProduceUnqiueList( decimals ){
-
-    	//var outputRange = axis.range();
-    	//var outputSteps = outputRange / 260;
     	var outputSteps = Math.floor( axis.ticks() );
-
 
     	var dataInputStartEnd = axis.scale().domain();
     	var dataInputRange = dataInputStartEnd[1] - dataInputStartEnd[0];
@@ -258,6 +257,31 @@ function makeGraph() {
 		.datum( series )
 		.transition().duration(500)
 		.call(chart);
+
+   
+   if( interactive ){
+      var min = Infinity;
+      var max = 0;
+      series.forEach(function( series ){
+         series.values.forEach(function( value ){
+            value = Number( value.x );
+            if( max < value )
+               max = value;
+            if( min > value )
+               min = value;
+         });
+      });
+
+      var visibleRange = chart.xAxis.range();
+      var range = min - max;
+      var pointsPerPixel = range / ( visibleRange[1] - visibleRange[0] ) ;
+      var neededPixelsForHandles = 30;
+      var offset  = neededPixelsForHandles * pointsPerPixel;
+
+      chart.brushExtent([ min - offset , max + offset])
+      chart.update()
+   }
+   
 	
 	nv.utils.windowResize(chart.update);
 	
