@@ -137,7 +137,11 @@ OPEC_Service.prototype.seriesFormatters = {};
 */
 OPEC_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 	this._formatedSeries = [];
+	this._formatedGroups = [];
 	
+	if( this._series.group )
+		this._formatedGroups.push( this._series.group );
+
 	// Error if the user did not set pick a subseries
 	if( ! this._series.sub_series || !(this._series.sub_series.length > 0 )  ){
 		err.message = "sub_series not specifed. Try adding `sub_series: ['avg']` inside plot" + ' \n -- ' + err.message;
@@ -156,11 +160,18 @@ OPEC_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 		//Make a new series
 		var newSeries = {
 			key : subSeries.label, //graph name
+			label : subSeries.label, //graph name
 			type : subSeries.type, //graph type (line|bar|etc...)
 			yAxis : subSeries.yAxis, //graph axis
 			disabled : subSeries.disabled === true ? true:false,
 			values: [], // place to store the points
 		};
+
+		if( this._series.group ){
+			newSeries.groupKey = this._series.group.groupKey
+			newSeries.groupLabel = this._series.sub_series[i].groupLabel
+		}
+
 		
 		//Loop over the downloaded points extracting the Y value needed
 		for( var i in this._data ){
@@ -202,7 +213,7 @@ OPEC_Service.prototype.buildSourceUrl = function( dataSource ){
 	
 	queryData.time = dataSource.t_bounds.map(function( dateString ){
 		var date = new Date( dateString );
-		//date = date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate();
+		//date = date.getFullYear() + "-" + date.getMonht() + "-" + date.getDate();
 		return date.toISOString();
 	}).join( '/' );
 	
@@ -473,6 +484,11 @@ OPEC_Service.prototype.calculateEstimatedEndTime = function(){
 */
 OPEC_Service.prototype.series = function(){
 	return this._formatedSeries;
+}
+
+
+OPEC_Service.prototype.groups = function(){
+	return this._formatedGroups;
 }
 
 

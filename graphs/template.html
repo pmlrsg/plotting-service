@@ -3,141 +3,186 @@
 	<head>
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<meta charset="utf-8">
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 		<link href="<%- config.serverAddress %>/nv.d3.css" rel="stylesheet" type="text/css">
+
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0/handlebars.min.js"></script>
 		<script src="<%- config.serverAddress %>/d3.js"></script>
 		<script src="<%- config.serverAddress %>/nv.d3.js"></script>
 		<script src="<%- config.serverAddress %>/es5.js"></script>
+		<script src="<%- config.serverAddress %>/template.js"></script>
+
+		<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,700,400' rel='stylesheet' type='text/css'>
 		<style>
 			body{
 				margin: 0px;
+				height: 100%;
+				font-family: 'Open Sans', sans-serif;
 			}
 			#logos{
-				position: fixed;
-				top: 0px;
-				left: 0px;
+				position: absolute;
+				bottom: 0px;
+				right: 0px;
+				width: 100%;
 				padding: 4px;
+				box-sizing: border-box;
+				background-color: white;
 			}
 			#logos img{
-				max-width: 100px;
-				max-height: 70px;
+				width: 0px;
+				height: auto;
 				float: left;
 			}
+
+			#chart-wrap{
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				bottom: 0px;
+				right: 250px;
+			}
+			#sidebar{
+				position: absolute;
+				top: 0px;
+				right: 0px;
+				bottom: 0px;
+
+				width: 250px;
+				box-sizing: border-box;
+
+				border-left: 2px solid black;
+			}
+
+			#controls{
+				position: absolute;
+				top: 0px;
+				right: 0px;
+				bottom: 0px;
+
+				width: 100%;
+				padding: 10px;
+				box-sizing: border-box;
+
+				overflow-y: scroll;
+			}
+
+			.bounds-holder {
+				padding-bottom: 6px;
+			}
+			.bounds-holder *{
+				width: 33%;
+				display: inline-block;
+				margin-right: -5px
+
+			}
+			.bounds-holder span{
+				text-align: center;
+			}
+			
+			#series label{
+				display: inline-block;
+				margin: 2px;
+				padding: 5px;
+				cursor: pointer;
+				font-size: 13px;
+			}
+
+			.seriesGroup{
+				padding-bottom: 0px;
+				margin: 1px;
+				font-size: 14px;
+			}
+
+			#series label span{
+				width: 8px;
+				height: 8px;
+				display: inline-block;
+				border: 2px solid;
+				border-radius: 50%;
+				position: relative;
+				top: 2px;
+			}
+
+			#series input[type="checkbox"]:not(:checked) + label span{
+				background-color: white !important;
+			}
+			#series input[type="checkbox"]{
+				display: none;
+			}
+
 		</style>
 		<script>
 
 			var container = '#chart';
 			var containerId = 'chart';
 
-			/**
-			 * Cross browser method to add onLoad event handlers
-			 */
-			function onWindowLoad(func){
-				if (window.addEventListener) {
-				    window.addEventListener("load", func, false);
-				}
-				else {
-				    window.attachEvent("onload", func);
-				}
-			}
+         // These are populated from Node
+         var series = <%- JSON.stringify( series ) %>;
+         var groups = <%- JSON.stringify( groups ) %>;
+         var request = <%- JSON.stringify( request ) %>;
+         var interactive = <%- interactive ? "true":"false" %>;
 
-			/**
-			 * Cross browser method to add onResive event handlers
-			 */
-			function onWindowResize(func){
-				if (window.addEventListener)
-				    window.addEventListener("resize", func, false);
-				else
-				    window.attachEvent("onresize", func);
-			}
-
-
-			function resize(){
-				var titleHeight = $('#title' ).outerHeight(true);
-
-				var newWidth = window.innerWidth;
-				var newHeight = window.innerHeight - titleHeight;
-				$( container )
-					.attr('style', 'width: ' + newWidth + 'px; height: ' + newHeight + 'px; ')
-					.attr('viewBox', '0 0 ' + newWidth + ' ' + newHeight);
-			}
-
-			/**
-			 * Sorts the logos disabled by height for style reasons
-			 *  - Will not work in IE8
-			 */
-			function reorderLogos(){
-				// Abort if getComputeStyle isnt allowed
-				try{
-					if( ! document.defaultView || ! document.defaultView.getComputedStyle )
-						return;
-
-					var logosElement = document.getElementById( 'logos' );
-					var children = [];
-					for ( var i in logosElement.children){
-						if( logosElement.children[i] instanceof HTMLElement )
-							children.push( logosElement.children[i] );
-					}
-
-					children.sort(function( imgElementA, imgElementB ){
-						var heightA = $( imgElementA ).height();
-						var heightB = $( imgElementB ).height();
-						return heightA < heightB ? 1: -1;
-					}).forEach(function( imgElement ){
-						logosElement.appendChild( imgElement );
-					});
-				}catch(e){};
-			}
-
-			function addLogos( logos ){
-				logos.forEach(function( logo ){
-					var img = document.createElement( 'img' );
-					img.onload = reorderLogos;
-					img.src = logo;
-					document.getElementById( 'logos' ).appendChild( img );
-				});
-			};
-
-			function addTitle( title ){
-				d3.select( document.body )
-				  .insert("h2", ":first-child")
-				  .attr("style", "text-align: center;")
-				  .attr("id", "title")
-				  .text(title);
-
-				resize();
-			}
-			
-			
-			// These are populated from Node			
-			var width = <%- width %>;
-			var height = <%- height %>;
-			var series = <%- JSON.stringify( series ) %>;
-			var request = <%- JSON.stringify( request ) %>;
-			var interactive = <%- interactive ? "true":"false" %>;
-
-			// This code means the graph will always be the size of the window/iframe
-			onWindowLoad(function(){
-				onWindowResize(resize);
-				resize();
-			});
 			
 			// This is the script required to build the request graph type
 			<%- graphJavascript %>
-			
-			// Once everything has loaded build the graph
-			onWindowLoad(function(){
-				nv.addGraph( makeGraph );
-				if( request.style && request.style.logos )
-					addLogos( request.style.logos );
 
-				if( request.plot && request.plot.title )
-					addTitle( request.plot.title );
-			});
+		</script>
+		<script id="series-template" type="text/x-handlebars-template">
+			{{#each groups}}
+				<div class="seriesGroup">
+					<h4>{{groupLabel}}</h4>
+			  		{{#each series}}
+
+			  			<input type="checkbox" name="selected_series[]" {{#unless disabled}}checked{{/unless}} value="{{key}}" id="{{key}}" />
+			  			<label for="{{key}}">
+			  				<span style="background-color: {{color}}; border-color: {{color}};"></span>
+			  				{{groupLabel}}
+			  			</label>
+			  		{{/each}}
+			  	</div>
+			{{/each}}
+			{{#each series}}
+
+	  			<input type="checkbox" name="selected_series[]" {{#unless disabled}}checked{{/unless}} value="{{key}}"  id="{{key}}" />
+	  			<label for="{{key}}">
+			  			<span style="background-color: {{color}}; border-color: {{color}};"></span>
+	  				{{label}}
+	  			</label>
+  			{{/each}}
 		</script>
 	</head>
 	<body>
-		<div id="logos"></div>
-		<svg id="chart" xmlns="http://www.w3.org/2000/svg" ></svg>
+		<div id="chart-wrap">
+			<svg id="chart" xmlns="http://www.w3.org/2000/svg" ></svg>
+		</div>
+		<div id="sidebar">
+			<div id="controls">
+				<div>
+					<h2>Bounds</h2>
+					<div class="bounds-holder">
+						<input type="text" id="left-y-max">
+						<span>MAX</span>
+						<input type="text" id="right-y-max">
+					</div>
+					<div class="bounds-holder">
+						<input type="text" id="left-y-min">
+						<span>MIN</span>
+						<input type="text" id="right-y-min">
+					</div>
+					<div>
+						<label>
+							<input type="checkbox" id="lock-y-axis" />
+							Lock Y axis
+						</label>
+					</div>
+				</div>
+
+				<div>
+					<h2>Series</h2>
+					<div id="series"></div>
+				</div>
+			</div>
+			<div id="logos"></div>
+		</div>
 	</body>
 </html>

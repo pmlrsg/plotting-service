@@ -177,7 +177,7 @@ function autoScale( axis ){
 };
 
 
-function makeGraph() {
+function makeGraph( series ) {
 
 	//Creates a new line graph
 	var chart = nv.models.linePlusLineWithFocusChart()

@@ -32,6 +32,7 @@ process.on('exit', function() {
 app.engine('.html', require('ejs').__express);
 app.set('views', __dirname  + '/html');
 app.set('view engine', 'html');
+app.set('trust proxy', ['loopback']);
 
 app.use(function (req, res, next) {
 	res.setHeader('Access-Control-Allow-Origin', '*');
@@ -96,6 +97,7 @@ app.get('/jquery.min.js', function(req,res){ return res.sendfile('./html/jquery.
 app.get('/nv.d3.js', function(req,res){ return res.sendfile('./lib/nvd3/nv.d3.js'); });
 app.get('/nv.d3.css', function(req,res){ return res.sendfile('./lib/nvd3/nv.d3.css'); });
 app.get('/d3.js', function(req,res){ return res.sendfile('./lib/nvd3/lib/d3.v3.js'); });
+app.get('/template.js', function(req,res){ return res.sendfile('./graphs/template.js'); });
 
 
 function makeDomain( options ){

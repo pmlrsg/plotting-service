@@ -41,19 +41,12 @@ function avg( arr ){
 var Graph = function ( request ) {
 	EventEmitter.call( this );
 	
-	/*
-	for(var i in this){
-		if( ! this.hasOwnProperty( i ) || this[i] instanceof Function ){
-			this[i] = Domain.active.bind(this[i]);
-		}
-	}
-	*/
-	
 	//Request data
 	this._data = null;
 	this._type = request.plot.type;
 	this._request = request;
 	this._series = [];
+	this._groups = [];
 	this._width = 800;
 	this._height = 600;
 	
@@ -154,6 +147,7 @@ Graph.prototype.getDataSources = function( series ){
 		//When the source handler has data, mark the lateral handler as done
 		handler.on('series-ready', function(){
 			_this._series = _this._series.concat( handler.series() );
+			_this._groups = _this._groups.concat( handler.groups() );
 			complete();
 		});
 	};
@@ -170,7 +164,7 @@ Graph.prototype.getDataSources = function( series ){
 	
 	return this;
 }
-
+ 
 
 /**
 * Returns the HTML to produce a interactive graph.
@@ -246,6 +240,7 @@ Graph.prototype.html = function(callback, settings ){
 	var defaultSettings = {
 		interactive : true, 
 		series : this._series,
+		groups : this._groups,
 		request: this._request,
 		width: this._width,
 		height: this._height,
