@@ -159,6 +159,9 @@ Graph.prototype.getDataSources = function( series ){
 	
 	// Once all the requests have finished
 	lateral.then(function(){
+		_this._series.sort(function( seriesA, seriesB ){
+			return seriesA.key.localeCompare( seriesB.key );
+		});
 		_this.emit( 'series-ready' ); 
 	});
 	

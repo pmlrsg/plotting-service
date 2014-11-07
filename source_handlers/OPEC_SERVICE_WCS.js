@@ -138,54 +138,41 @@ OPEC_Service.prototype.seriesFormatters = {};
 OPEC_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 	this._formatedSeries = [];
 	this._formatedGroups = [];
-	
-	if( this._series.group )
-		this._formatedGroups.push( this._series.group );
+	groupKey = uuid();
 
-	// Error if the user did not set pick a subseries
-	if( ! this._series.sub_series || !(this._series.sub_series.length > 0 )  ){
-		err.message = "sub_series not specifed. Try adding `sub_series: ['avg']` inside plot" + ' \n -- ' + err.message;
-		throw err;
-	}
+	this._formatedGroups.push( {
+      groupLabel: this._series.label,
+      groupKey: groupKey,
+      meta: this._series.meta
+   } );
 	
 	// Timeseries requests contain multiple Y points
 	// Extract each point and move it to its own series
-	for( var i in this._series.sub_series ){
+	var defaltVariables = ['mean'];
+	var variableKeys = [ 'std', 'min', 'max', 'median', 'mean' ];
+	for( var variableKeyId = 0; variableKeyId < variableKeys.length; variableKeyId++ ){
 		
-		if( ! this._series.sub_series.propertyIsEnumerable( i ) )
-			continue;
-		
-		var subSeries = this._series.sub_series[i];
+		var variable = variableKeys[variableKeyId];
 		
 		//Make a new series
 		var newSeries = {
-			key : subSeries.label, //graph name
-			label : subSeries.label, //graph name
-			type : subSeries.type, //graph type (line|bar|etc...)
-			yAxis : subSeries.yAxis, //graph axis
-			disabled : subSeries.disabled === true ? true:false,
-			values: [], // place to store the points
+			key : this._series.label + ' ' + variable, //graph name
+			type : 'line', //graph type (line|bar|etc...)
+			yAxis : this._series.yAxis, //graph axis
+			disabled : defaltVariables.indexOf( variable) == -1,
+			values: [] // place to store the points
 		};
 
-		if( this._series.group ){
-			newSeries.groupKey = this._series.group.groupKey
-			newSeries.groupLabel = this._series.sub_series[i].groupLabel
-		}
-
+		newSeries.groupKey = groupKey,
+		newSeries.groupLabel = variable
 		
 		//Loop over the downloaded points extracting the Y value needed
 		for( var i in this._data ){
 			var point = {
 				x : i, // x axis,
-				y : this._data[ i ][ subSeries.key ] // y axis
+				y : this._data[ i ][ variable ] // y axis
 			};
 			
-				
-			if( isNaN(  new Date( point.x ).getTime() )  )
-				throw new Error('Time axis value from server is invalid value:`' + point.x + '` sub_series:`'+subSeries.key+'`');
-				
-			if( isNaN( point.y - 0 )  )
-				throw new Error('Data axis value from server is invalid value:`' + point.y  + '` sub series:`'+subSeries.key+'`');
 			
 			newSeries.values.push( point );
 		}

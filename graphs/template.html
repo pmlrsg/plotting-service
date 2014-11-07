@@ -5,6 +5,9 @@
 		<meta charset="utf-8">
 		<link href="<%- config.serverAddress %>/nv.d3.css" rel="stylesheet" type="text/css">
 
+		<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+		<link href='//fonts.googleapis.com/css?family=Open+Sans:400italic,700,400' rel='stylesheet' type='text/css'>
+
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0/handlebars.min.js"></script>
 		<script src="<%- config.serverAddress %>/d3.js"></script>
@@ -12,7 +15,6 @@
 		<script src="<%- config.serverAddress %>/es5.js"></script>
 		<script src="<%- config.serverAddress %>/template.js"></script>
 
-		<link href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,700,400' rel='stylesheet' type='text/css'>
 		<style>
 			body{
 				margin: 0px;
@@ -69,16 +71,49 @@
 			.bounds-holder {
 				padding-bottom: 6px;
 			}
-			.bounds-holder *{
+			.bounds-holder > div{
 				width: 33%;
 				display: inline-block;
-				margin-right: -5px
-
 			}
-			.bounds-holder span{
+			.bounds-input-holder {
+				position: relative;
+			}
+			.bounds-input-holder span{
+				position: absolute;
+				cursor: pointer;
+				right: 0px;
+				top: 50%;
+				margin-top: -6px;
+				font-size: 14px;
+			}
+
+			.bounds-input-holder input.active + span:before{
+				color: black;
+				content: "\f023"
+			}
+			.bounds-input-holder input + span:before{
+				color: gray;
+				content: "\f09c"
+			}
+
+			.bounds-holder > span{
 				text-align: center;
+				width: 28%;
+				display: inline-block;
+			}
+			.bounds-holder input{
+				width: 100%;
 			}
 			
+			.bounds-titles{
+				width: 33%;
+				text-align: center;
+			}
+
+			.bounds-titles.left{ float: left; }
+			.bounds-titles.right{ float: right; }
+
+
 			#series label{
 				display: inline-block;
 				margin: 2px;
@@ -88,9 +123,9 @@
 			}
 
 			.seriesGroup{
-				padding-bottom: 0px;
-				margin: 1px;
 				font-size: 14px;
+				margin: 0px -10px;
+				padding: 1px 10px;
 			}
 
 			#series label span{
@@ -110,6 +145,33 @@
 				display: none;
 			}
 
+			#series > div:nth-child(odd)		{ background-color:#eee; }
+			#series > div:nth-child(even)		{ background-color:#fff; }
+
+			.toggle-meta-information{
+				cursor: pointer;
+			}
+			.meta-information{
+				display: none;
+			}
+
+			h2{
+				margin-bottom: 2px;
+			}
+			h4{
+				margin-bottom: 2px;
+				margin-top: 10px;
+			}
+
+			.clearfix:before,
+			.clearfix:after {
+			    content: " ";
+			    display: table;
+			}
+
+			.clearfix:after {
+			    clear: both;
+			}
 		</style>
 		<script>
 
@@ -130,7 +192,13 @@
 		<script id="series-template" type="text/x-handlebars-template">
 			{{#each groups}}
 				<div class="seriesGroup">
-					<h4>{{groupLabel}}</h4>
+					<h4>
+						{{groupLabel}}
+						{{#if meta}}
+							<span data-key="{{groupKey}}" class="js-toggle-meta-information toggle-meta-information fa fa-info-circle"></span>
+						{{/if}}
+					</h4>
+					<div data-key="{{groupKey}}" class="js-meta-information meta-information">{{#if meta}}{{{meta}}}{{/if}}</div>
 			  		{{#each series}}
 
 			  			<input type="checkbox" name="selected_series[]" {{#unless disabled}}checked{{/unless}} value="{{key}}" id="{{key}}" />
@@ -147,7 +215,11 @@
 	  			<label for="{{key}}">
 			  			<span style="background-color: {{color}}; border-color: {{color}};"></span>
 	  				{{label}}
+						{{#if meta}}
+							<span data-key="{{key}}" class="js-toggle-meta-information toggle-meta-information fa fa-info-circle"></span>
+						{{/if}}
 	  			</label>
+				<div data-key="{{key}}" class="js-meta-information meta-information">{{#if meta}}{{meta}}{{/if}}</div>
   			{{/each}}
 		</script>
 	</head>
@@ -158,22 +230,32 @@
 		<div id="sidebar">
 			<div id="controls">
 				<div>
-					<h2>Bounds</h2>
+					<h2>Y-Axis</h2>
+					<div class="clearfix">
+						<h4 class="bounds-titles left">Left</h4>
+						<h4 class="bounds-titles right">Right</h4>
+					</div>
 					<div class="bounds-holder">
-						<input type="text" id="left-y-max">
+						<div class="bounds-input-holder">
+							<input type="text" id="left-y-max">
+							<span class="fa fa-unlock"></span>
+						</div>
 						<span>MAX</span>
-						<input type="text" id="right-y-max">
+						<div class="bounds-input-holder">
+							<input type="text" id="right-y-max">
+							<span class="fa fa-unlock"></span>
+						</div>
 					</div>
 					<div class="bounds-holder">
-						<input type="text" id="left-y-min">
+						<div class="bounds-input-holder">
+							<input type="text" id="left-y-min">
+							<span class="fa fa-unlock"></span>
+						</div>
 						<span>MIN</span>
-						<input type="text" id="right-y-min">
-					</div>
-					<div>
-						<label>
-							<input type="checkbox" id="lock-y-axis" />
-							Lock Y axis
-						</label>
+						<div class="bounds-input-holder">
+							<input type="text" id="right-y-min">
+							<span class="fa fa-unlock"></span>
+						</div>
 					</div>
 				</div>
 

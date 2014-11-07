@@ -50,6 +50,8 @@ function reorderLogos(){
 
         if( ( (logosElementWidth / 2) / imgElement.naturalWidth ) * imgElement.naturalHeight < 35 )
           var width = '100%';
+        else if( ( (logosElementWidth / 2) / imgElement.naturalWidth ) * imgElement.naturalHeight > 150 )
+          var width = '25%';
         else
           var width = '50%';
 
@@ -58,7 +60,7 @@ function reorderLogos(){
   }catch(e){};
 
   $('#controls').css({
-    'bottom': $('#logos').height() + 'px'
+    'bottom': $('#logos').outerHeight() + 'px'
   });
 }
 
@@ -116,22 +118,30 @@ var graphController = {
 
     $('[name="selected_series[]"]').change( this.updateViewSeries.bind( this ) );
 
+    //Series meta data toggle
+    $('body').on('click', '.js-toggle-meta-information', function(e){
+      e.preventDefault();
+      var key = $(this).data( 'key' );
+      var metaBox = $('[data-key="' + key + '"].js-meta-information');
+      metaBox.toggle();
+    });
+
   },
   setupBounds: function(){
     function roundsTo2(num){ return Math.round( num * 100 ) / 100; };
-
-    this.chart.on("brush", function(){
+    function updateyAxisLockValues(){
       var leftDomain = graphController.chart.y1Axis.domain();
       var rightDomain = graphController.chart.y2Axis.domain();
 
-      $('#left-y-min').attr( 'placeholder', roundsTo2(leftDomain[0]) );
-      $('#left-y-max').attr( 'placeholder', roundsTo2(leftDomain[1]) );
+      $('#left-y-min').attr( 'placeholder', roundsTo2( leftDomain[0]) );
+      $('#left-y-max').attr( 'placeholder', roundsTo2( leftDomain[1]) );
 
-      $('#right-y-min').attr( 'placeholder', roundsTo2(rightDomain[0]) );
-      $('#right-y-max').attr( 'placeholder', roundsTo2(rightDomain[1]) );
-    });
+      $('#right-y-min').attr( 'placeholder', roundsTo2( rightDomain[0]) );
+      $('#right-y-max').attr( 'placeholder', roundsTo2( rightDomain[1]) );
+    }
+    this.chart.on("update", updateyAxisLockValues );
+    this.chart.on("brush", updateyAxisLockValues );
 
-    function valIsNothing(element){ return $(element).val() == ""; };
 
     function updateValueRange(){
       var y1Domain = [ 'auto', 'auto' ];
@@ -155,35 +165,29 @@ var graphController = {
       graphController.chart.update();
     }
 
-    $('.bounds-holder input').on('keyup change',function(){
+    $('.bounds-input-holder input').on('keyup change',function(){
       updateValueRange();
-
-      if( $('.bounds-holder input').toArray().some( valIsNothing ) )
-        $('#lock-y-axis').prop( "checked", false );
+      if( $(this).val() != "" )
+        $(this).addClass('active');
       else
-        $('#lock-y-axis').prop( "checked", true );
+        $(this).removeClass('active');
     });
 
-    $('.bounds-holder input').focus(function(){
-      if( valIsNothing( this ) ){
-        $(this).val( $(this).attr('placeholder') );
-        $('#lock-y-axis').prop( "checked", true );
-        updateValueRange();
-      }
+    $('.bounds-input-holder input').focus(function(){
+      if( $( this ).val() == "" )
+        $(this).val( $(this).attr('placeholder') ).change();
     });
 
-    $('#lock-y-axis').change(function(){
-      if( $( this ).prop('checked') ){
-        $('.bounds-holder input').each(function(){
-          $(this).val( $(this).attr('placeholder') );
-          updateValueRange();
-        });
-      }else{
-        $('.bounds-holder input').each(function(){
-          $(this).val( "" );
-          updateValueRange();
-        });
-      }
+
+    $('.bounds-input-holder span').click(function(){
+        var input = $(this).prev();
+        if( input.val() == "" )
+          input.val( input.attr('placeholder') );
+        else
+          input.val( "" );
+
+        input.change();
+
     });
   },
   init: function(){
@@ -199,6 +203,9 @@ var graphController = {
     this.graphSeries = [].concat(this.originalSeries);
     this.chart =  makeGraph( this.graphSeries );
     //nv.addGraph( this.chart );
+    //
+    this.chart.showLegend( false );
+    this.chart.title( request.plot.title );
 
     if( request.style && request.style.logos )
       addLogos( request.style.logos );
