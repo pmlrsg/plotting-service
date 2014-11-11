@@ -157,10 +157,14 @@ Graph.prototype.getDataSources = function( series ){
 
 	lateral.add( series );
 	
+	function strcmp ( str1, str2 ) { 
+		return ( ( str1 == str2 ) ? 0 : ( ( str1 > str2 ) ? 1 : -1 ) );
+	};
+	
 	// Once all the requests have finished
 	lateral.then(function(){
 		_this._series.sort(function( seriesA, seriesB ){
-			return seriesA.key.localeCompare( seriesB.key );
+			return strcmp(seriesA.key, seriesB.key );
 		});
 		_this.emit( 'series-ready' ); 
 	});

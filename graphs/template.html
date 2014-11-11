@@ -113,12 +113,14 @@
 			.bounds-titles.left{ float: left; }
 			.bounds-titles.right{ float: right; }
 
+			.pointer{
+				cursor: pointer;
+			}
 
 			#series label{
 				display: inline-block;
 				margin: 2px;
 				padding: 5px;
-				cursor: pointer;
 				font-size: 13px;
 			}
 
@@ -202,7 +204,7 @@
 			  		{{#each series}}
 
 			  			<input type="checkbox" name="selected_series[]" {{#unless disabled}}checked{{/unless}} value="{{key}}" id="{{key}}" />
-			  			<label for="{{key}}">
+			  			<label class="pointer" for="{{key}}">
 			  				<span style="background-color: {{color}}; border-color: {{color}};"></span>
 			  				{{groupLabel}}
 			  			</label>
@@ -212,7 +214,7 @@
 			{{#each series}}
 
 	  			<input type="checkbox" name="selected_series[]" {{#unless disabled}}checked{{/unless}} value="{{key}}"  id="{{key}}" />
-	  			<label for="{{key}}">
+	  			<label class="pointer" for="{{key}}">
 			  			<span style="background-color: {{color}}; border-color: {{color}};"></span>
 	  				{{label}}
 						{{#if meta}}
@@ -262,6 +264,12 @@
 				<div>
 					<h2>Series</h2>
 					<div id="series"></div>
+				</div>
+				<div>
+					<label class="pointer">
+						<input type="checkbox" id="dont-join-data-gaps" />
+						Dont join gaps
+					</label>
 				</div>
 			</div>
 			<div id="logos"></div>

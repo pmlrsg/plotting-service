@@ -1,3 +1,13 @@
+var uuid = (function(){
+  var count = 1;
+  return function(){
+    var timestamp = new Date().getTime();
+    count++
+    return timestamp + '_' + count;
+  }
+})();
+
+
 Templates = {
   templates: {},
   init: function( key ){
@@ -75,7 +85,62 @@ function addLogos( logos ){
 
 
 var graphController = {
+  gapThreshold: 2,
 
+  splitSeriesOnGap: function( series ){
+    var newSeriesBlocks = []; // place to store value blocks
+    var newSeriesBlock = []; //place to store the current block
+    var valuesLength = series.values.length - 1; //number of values
+    
+    for(var i = 0; i <= valuesLength ; i++){
+
+      //Dont check the gap on the first or last value
+      newSeriesBlock.push( series.values[i] );
+      if( i == 0 || i == valuesLength ) continue;
+
+      // Calculate the last and next gap between the data times
+      var lastGap = series.values[i].x - series.values[i-1].x;
+      var nextGap = series.values[i+1].x - series.values[i].x;
+
+      // If the gap is over the threshold split it into a new block
+      if( nextGap > lastGap * this.gapThreshold ){
+        newSeriesBlocks.push( newSeriesBlock );
+        newSeriesBlock = [];
+      }
+    }
+
+    // Add the final block
+    newSeriesBlocks.push( newSeriesBlock );
+
+    // Produce a template of the attributes for the current series
+    var seriesTemplate = {};
+    for( var i in series ){
+      if( ! series.hasOwnProperty( i ) || i == 'values' )
+        continue;
+
+      seriesTemplate[ i ] = series[i]
+    }
+
+    // Turn the blocks into proper sets of series
+    return newSeriesBlocks.map(function( block, index ){
+      // Merge the template into the new set of values
+      var finalSeries = $.extend({}, seriesTemplate );
+
+      finalSeries.values = block;
+      finalSeries.key = finalSeries.key + "-p" + index;
+      return finalSeries;
+    });
+       
+  },
+  splitAllSeriesOnGap: function( allSeries ){
+    var newSeriesList = [];
+
+    for(var i = 0; i < allSeries.length ; i++){
+      var series = allSeries[i]
+      newSeriesList = newSeriesList.concat( this.splitSeriesOnGap( series ) );
+    }
+    return newSeriesList;
+  },
   updateViewSeries: function(){
     var seriesIdsToShow = $('[name="selected_series[]"]:checked')
         .toArray()
@@ -84,6 +149,9 @@ var graphController = {
     var seriesToShow = this.originalSeries.filter(function(series){
       return seriesIdsToShow.indexOf( series.key ) > -1;
     });
+
+    if( $('#dont-join-data-gaps').prop('checked') )
+      seriesToShow = this.splitAllSeriesOnGap( seriesToShow );
 
     var args = [ 0, this.graphSeries.length ].concat( seriesToShow );
     [].splice.apply( this.graphSeries, args );
@@ -190,17 +258,26 @@ var graphController = {
 
     });
   },
-  init: function(){
+
+  prepareSeries: function(){
 
     //Add colours
     var color = d3.scale.category20();
     series.forEach(function( seriesSingle, i ){
       if( seriesSingle.color == void(0) )
         seriesSingle.color = color( i );
+
+      seriesSingle.label = seriesSingle.label || seriesSingle.key;
+      seriesSingle.key = seriesSingle.key || uuid();
+
     });
 
     this.originalSeries = series;
     this.graphSeries = [].concat(this.originalSeries);
+  },
+  init: function(){
+
+    this.prepareSeries()
     this.chart =  makeGraph( this.graphSeries );
     //nv.addGraph( this.chart );
     //
@@ -214,6 +291,8 @@ var graphController = {
     this.displaySeries();
 
     this.setupBounds();
+
+    $('#dont-join-data-gaps').change( graphController.updateViewSeries.bind( graphController ) );
 
     //Set all series to show by default
     this.originalSeries.forEach(function( series ){
