@@ -222,6 +222,30 @@ OPEC_Service.prototype.buildSourceUrl = function( dataSource ){
 
 
 /**
+* Returns the series ready to be inserted into the graph built
+* @return {Object[][]}  The array of series arrays
+*/
+OPEC_Service.prototype.series = function(){
+	return this._formatedSeries;
+}
+
+
+OPEC_Service.prototype.groups = function(){
+	return this._formatedGroups;
+}
+
+
+OPEC_Service.prototype.sourceName = function(){
+	return this._dataSource.coverage;
+}
+
+
+
+
+////////////////////////////// ALL THIS BELLOW NEEDS REDOING
+
+
+/**
 * Waits for X amount of seconds before calculating the estimated time
 * 	- Calculating the time takes an extra 2 requests.
 */
@@ -233,26 +257,6 @@ OPEC_Service.prototype.calculateEstimatedEndTimeAfterWait = function(){
 		if( ! _this._series_ready )
 			_this.calculateEstimatedEndTime();
 	}, waitFor)
-}
-
-
-OPEC_Service.prototype.isOnSameSubnet = function( ip ){
-	var ifaces=os.networkInterfaces();
-	var addresses = [];
-	for (var dev in ifaces) {
-		var alias=0;
-		ifaces[dev].forEach(function(details){
-			if( details.family=='IPv4' && details.internal == false ) {
-				addresses.push( details.address )
-			}
-		});
-	}
-	
-	var match = addresses.some(function( computerIp ){
-		return ( computerIp.substr(0, computerIp.lastIndexOf(-1)) == ip.substr(0, ip.lastIndexOf(-1))  );
-	});
-	
-	return match;
 }
 
 /**
@@ -302,55 +306,10 @@ OPEC_Service.prototype.calculateEstimatedEndTime = function(){
 	
 	sequence
 		
-		/**
-		* Work out if the netCDF is local to us (PML) or at an external source
-		* Depending on its location depends on how many time slices we should use to sample
-		.then(domain.bind(function(next){
-			
-			var parsed = url.parse(_this.threddsUrl);
-			var domain = parsed.host;
-			
-			dns.resolve4( domain, domain.bind(function( err, ips ){
-				if( err )
-					throw new Error('The ip of the data source could not be found.');
-				
-				var hasLocalIp = ips.some(function( ip ){
-					return this.isOnSameSubnet( ip );
-				});
-				
-				if( hasLocalIp )
-					data.timeSliceSampleSize = 20;
-				else
-					data.timeSliceSampleSize = 2;
-				
-				this._estimationStatus.timeSliceSampleSize = data.timeSliceSampleSize;
-				
-				next();
-			}))
-			
-		}))
-		*/
 		
 		.then(domain.bind(function(next){
 			data.pingTime = 50;
 			next();
-			/*
-			var parsed = url.parse(_this.threddsUrl);
-			var domain = parsed.host;
-			var pingStart = null;
-			
-			session.pingHost (domain, function (error, target) {
-				pingStop = new Date();
-				
-			    if (error)
-			        data.pingTime = 0;
-			    else
-			        data.pingTime = pingStop - pingStart;
-			        
-			    next();
-			})
-			pingStart = new Date();
-			*/
 		}))
 		
 	
@@ -464,26 +423,6 @@ OPEC_Service.prototype.calculateEstimatedEndTime = function(){
 			
 		}))
 }
-
-/**
-* Returns the series ready to be inserted into the graph built
-* @return {Object[][]}  The array of series arrays
-*/
-OPEC_Service.prototype.series = function(){
-	return this._formatedSeries;
-}
-
-
-OPEC_Service.prototype.groups = function(){
-	return this._formatedGroups;
-}
-
-
-OPEC_Service.prototype.sourceName = function(){
-	return this._dataSource.coverage;
-}
-
-
 
 //------------------------------------------
 //Stats about the current download progress

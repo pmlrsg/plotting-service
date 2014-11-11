@@ -272,13 +272,13 @@ function makeGraph( series ) {
          });
       });
 
-      var visibleRange = chart.xAxis.range();
-      var range = min - max;
-      var pointsPerPixel = range / ( visibleRange[1] - visibleRange[0] ) ;
-      var neededPixelsForHandles = 30;
-      var offset  = neededPixelsForHandles * pointsPerPixel;
+      // var visibleRange = chart.xAxis.range();
+      // var range = min - max;
+      // var pointsPerPixel = range / ( visibleRange[1] - visibleRange[0] ) ;
+      // var neededPixelsForHandles = 30;
+      // var offset  = neededPixelsForHandles * pointsPerPixel;
 
-      chart.brushExtent([ min - offset , max + offset])
+      chart.brushExtent([ min  , max ])
       chart.update()
    }
    

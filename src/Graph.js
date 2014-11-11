@@ -83,36 +83,8 @@ Graph.prototype.init = function(  ) {
 	var _this = this;
 	
 	this.on('series-ready', function(){
-		
-		//Put it into testing allowing the front end to serve requests for this job.
-		_this.emit('testing');
-		
-		// Test the data
-		_this.loadGraphInPhantomPage(function( page ){
-			page.evaluate(function(){
-				var results = {
-					validation: window.testData(),
-					graphComplexity: document.querySelectorAll('path').length
-				};
-				
-				return results;
-				
-			}, function( results ){
-				var errorResult = results.validation[0];
-				var errorMessage = results.validation[1];
-				page.exitPhantom();
-				
-				if( errorResult === true ){
-					_this._graphComplexity = results.graphComplexity;
-					_this.emit( 'complete' );
-				}else{
-					throw new Error("Validating the data in the series failed: " + errorMessage);
-				}
-			})
-			
-		});
-		
-	})
+		_this.emit( 'complete' );
+	});
 	
 	this.getDataSources( this._request.plot.data.series );
 	
