@@ -277,9 +277,6 @@ var graphController = {
   },
 
   svg: function( callback ){
-    // use cached svg
-    if( this._svg )
-      return callback( this._svg );
 
     // Get the style sheet and build a SVG
     var _this = this;
@@ -295,10 +292,19 @@ var graphController = {
         _this.chart.contextChart(false);
         _this.chart.update();
 
+        // Browser needs to apply d3 changes
         setTimeout(finishGraph, 100);
+
         function finishGraph(){
-          var svg = $(container)
+          var svg = $(container);
+          var newSvg = svg
             .clone()
+            .attr( 'viewBox', '0 0 '+ svg.width() + " " + svg.height() )
+            .css({
+                'background-color': 'white',
+                width: svg.width(),
+                height: svg.height()
+            })
             .append(styleElement)
             .appendTo('<div>')
             .parent()
@@ -309,8 +315,7 @@ var graphController = {
           _this.chart.contextChart(true);
           _this.chart.update();
 
-          _this._svg = svg;
-          callback( svg );
+          callback( newSvg );
         };
       }
     });
