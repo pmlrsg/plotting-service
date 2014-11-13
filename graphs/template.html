@@ -8,6 +8,9 @@
 		<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
 		<link href='//fonts.googleapis.com/css?family=Open+Sans:400italic,700,400' rel='stylesheet' type='text/css'>
 
+		<script>
+		var root = "<%- config.serverAddress %>";
+		</script>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0/handlebars.min.js"></script>
 		<script src="<%- config.serverAddress %>/d3.js"></script>
@@ -262,7 +265,7 @@
 				</div>
 
 				<div>
-					<h2>Series</h2>
+					<h2>Data Series</h2>
 					<div id="series"></div>
 				</div>
 				<div>
@@ -270,6 +273,12 @@
 						<input type="checkbox" id="dont-join-data-gaps" />
 						Dont join gaps
 					</label>
+				</div>
+
+				<div>
+					<h2>Download</h2>
+					<button onclick="graphController.download('svg');">SVG</button>
+					<button onclick="graphController.download('png');">PNG</button>
 				</div>
 			</div>
 			<div id="logos"></div>

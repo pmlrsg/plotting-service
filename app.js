@@ -15,6 +15,10 @@ var app = express();
 var url = require('url');
 var Domain = require('domain');
 var extend = require('node.extend');
+var tmp = require('tmp');
+var svg2png = require('svg2png');
+var Sequence = exports.Sequence || require('sequence').Sequence;
+var fs = require( 'fs' );
 
 // Handles the clients requiest to build the graph
 var GraphJob = require('./src/GraphJob');
@@ -42,6 +46,7 @@ app.use(function (req, res, next) {
 });
 
 app.use(app.router);
+//app.use(express.bodyParser());
 
 /**
 * Allows Express URL paramaters to accept regex
@@ -228,6 +233,76 @@ app.get('/job/:id/:returnType', function(req, res) {
 	
 	process.nextTick(domain.bind(handle));
 });
+
+
+
+/**
+* Returns the current status of a job you requested
+* 
+* @return {JSON} States of the job you requested
+*/
+app.post('/svg-to/:format', function(req, res) {
+	
+	var domain = makeDomain( { res: res } );
+	
+	var body = "";
+	req.on('data', domain.bind(function(data) {
+		body += data;
+		if (body.length > 5e6)
+			req.connection.destroy();
+	}));
+	
+	req.on('end', domain.bind(handle)); 
+
+	function handle(){
+		var format = req.params.format;
+		var svgXML = decodeURIComponent(body.substr(4)).replace(/\+/g, ' ');
+		switch( format ){
+			case "svg":
+				res.setHeader('Content-Disposition', 'attachment; filename=image.' + format );
+				res.setHeader('Content-Type', 'image/svg+xml;charset=utf-8' );
+				res.end(svgXML);
+				break;
+			case "png":
+				res.setHeader('Content-Disposition', 'attachment; filename=image.' + format );
+				res.setHeader('Accept-Ranges', 'bytes' );
+				res.setHeader('Content-Type', 'image/png' );
+
+
+				var sequence = Sequence.create();
+				var data = {};
+				
+				sequence
+				.then(function(next){
+					tmp.file({ postfix: '.svg' }, function _tempFileCreated(err, path, fd) {
+					   if (err) throw err;
+						data.svgPath = path;
+						fs.writeFile(path, svgXML);
+						next();
+					});
+				})
+				.then(function(next){
+					tmp.file({ postfix: '.png' }, function _tempFileCreated(err, path, fd) {
+					   if (err) throw err;
+						data.pngPath = path;
+						next();
+					});
+				})
+				.then(function(next){
+					svg2png(data.svgPath, data.pngPath, function( err ){
+						if( err ) throw err;
+
+						res.sendfile( data.pngPath );
+					});
+				})
+				
+				break;
+		};
+	};
+});
+
+
+
 
 /**
 * Start the server on port {config.port}

@@ -275,6 +275,62 @@ var graphController = {
     this.originalSeries = series;
     this.graphSeries = [].concat(this.originalSeries);
   },
+
+  svg: function( callback ){
+    // use cached svg
+    if( this._svg )
+      return callback( this._svg );
+
+    // Get the style sheet and build a SVG
+    var _this = this;
+    $.ajax({
+      url: root + "/nv.d3.css",
+      success: function( result ){
+
+        var styleElement = $(document.createElementNS("http://www.w3.org/2000/svg", "style"))
+          .attr('type', "text/css")
+          .text(result);
+
+        _this.chart.showLegend(true);
+        _this.chart.contextChart(false);
+        _this.chart.update();
+
+        setTimeout(finishGraph, 100);
+        function finishGraph(){
+          var svg = $(container)
+            .clone()
+            .append(styleElement)
+            .appendTo('<div>')
+            .parent()
+            .html();
+
+
+          _this.chart.showLegend(false);
+          _this.chart.contextChart(true);
+          _this.chart.update();
+
+          _this._svg = svg;
+          callback( svg );
+        };
+      }
+    });
+  },
+  download: function( format ){
+    var _this = this;
+
+    this.svg(startDownload);
+
+    function startDownload( svg ){
+
+      $('<form>')
+        .attr('method', 'post')
+        .attr('action', root + "/svg-to/" + format )
+        .append( $('<input>').attr('type','hidden').attr('name','svg').val( svg ) )
+        .appendTo('body')
+        .submit();
+    };
+
+  },
   init: function(){
 
     this.prepareSeries()

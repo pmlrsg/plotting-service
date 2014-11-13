@@ -5,7 +5,7 @@
   "private": true,
   "main": "app.js",
   "dependencies": {
-    "express": "~3.4.4",
+    "express": "~3.*",
     "ejs": "~0.8.5",
     "sequence": "~3.0.0",
     "lateral": "~3.0.0",
@@ -16,13 +16,17 @@
     "clone": "*",
     "memoizee": "*",
     "phantomjs": "~1.9.7-15",
-    "xml2js": "~0.4.4"
+    "xml2js": "~0.4.4",
+    "body-parser": "~1.9.2",
+    "svg2png": "~1.1.0",
+    "temporary": "0.0.8",
+    "tmp": "0.0.24"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/gregjopa/d3-server-side-demo"
   },
   "scripts": {
-     "preinstall": "sudo npm i -g phantomjs"
+    "preinstall": "sudo npm i -g phantomjs"
   }
 }

@@ -282,6 +282,7 @@
 							*/
 							{
 								"handler" : "OPEC_SERVICE_WCS",
+								"yAxis": 1,
 								"data_source" : {
 									"coverage"  : "T",
 									"t_bounds"  : ["2008-06-06T19:43:37","2013-08-27T19:43:37"],
@@ -291,33 +292,7 @@
 									"threddsUrl"  : "https://rsg.pml.ac.uk/thredds/wcs/PML_GEN_M?",
 									"metaCacheUrl" : 'http://portaldev.marineopec.eu/cache/layers/pml_monthly_T.json',
 									"middlewareUrl" : 'http://portaldev.marineopec.eu/service/wcs'
-								},
-								"sub_series" : [
-									{
-										"label" : "Oxygen Median",
-										"key"  : "median",
-										"yAxis": 2,
-										"type": "line",
-									},
-									{
-										"label" : "Oxygen Mean",
-										"key"  : "mean",
-										"yAxis": 2,
-										"type": "line",
-									},
-									{
-										"label" : "Oxygen Min",
-										"key"  : "min",
-										"yAxis": 1,
-										"type": "line",
-									},
-									{
-										"label" : "Oxygen Max",
-										"key"  : "max",
-										"yAxis": 1,
-										"type": "line",
-									},
-								]
+								}
 							},
 							
 						]
@@ -371,7 +346,7 @@
 				
 				var intervalId = setInterval(function(){
 					$.ajax({
-						'url': '/job/' + job_id + "/status",
+						'url': 'job/' + job_id + "/status",
 						'dataType': 'json',
 						'method': 'get',
 						complete : function( response ){
@@ -409,7 +384,7 @@
 			}
 			function submitRequest( request ){
 				$.ajax({
-					'url': '/plot',
+					'url': 'plot',
 					'data': JSON.stringify( request ),
 					'dataType': 'json',
 					'method': 'post',
