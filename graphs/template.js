@@ -300,12 +300,10 @@ var graphController = {
           var newSvg = svg
             .clone()
             .attr( 'viewBox', '0 0 '+ svg.width() + " " + svg.height() )
-            .css({
-                'background-color': 'white',
-                width: svg.width(),
-                height: svg.height()
-            })
-            .append(styleElement)
+            .css( 'background-color', 'white')
+            .attr( 'width', svg.width() )
+            .attr( 'height', svg.height() )
+            .prepend(styleElement)
             .appendTo('<div>')
             .parent()
             .html();
