@@ -41,19 +41,12 @@ function avg( arr ){
 var Graph = function ( request ) {
 	EventEmitter.call( this );
 	
-	/*
-	for(var i in this){
-		if( ! this.hasOwnProperty( i ) || this[i] instanceof Function ){
-			this[i] = Domain.active.bind(this[i]);
-		}
-	}
-	*/
-	
 	//Request data
 	this._data = null;
 	this._type = request.plot.type;
 	this._request = request;
 	this._series = [];
+	this._groups = [];
 	this._width = 800;
 	this._height = 600;
 	
@@ -90,36 +83,8 @@ Graph.prototype.init = function(  ) {
 	var _this = this;
 	
 	this.on('series-ready', function(){
-		
-		//Put it into testing allowing the front end to serve requests for this job.
-		_this.emit('testing');
-		
-		// Test the data
-		_this.loadGraphInPhantomPage(function( page ){
-			page.evaluate(function(){
-				var results = {
-					validation: window.testData(),
-					graphComplexity: document.querySelectorAll('path').length
-				};
-				
-				return results;
-				
-			}, function( results ){
-				var errorResult = results.validation[0];
-				var errorMessage = results.validation[1];
-				page.exitPhantom();
-				
-				if( errorResult === true ){
-					_this._graphComplexity = results.graphComplexity;
-					_this.emit( 'complete' );
-				}else{
-					throw new Error("Validating the data in the series failed: " + errorMessage);
-				}
-			})
-			
-		});
-		
-	})
+		_this.emit( 'complete' );
+	});
 	
 	this.getDataSources( this._request.plot.data.series );
 	
@@ -154,6 +119,7 @@ Graph.prototype.getDataSources = function( series ){
 		//When the source handler has data, mark the lateral handler as done
 		handler.on('series-ready', function(){
 			_this._series = _this._series.concat( handler.series() );
+			_this._groups = _this._groups.concat( handler.groups() );
 			complete();
 		});
 	};
@@ -163,14 +129,21 @@ Graph.prototype.getDataSources = function( series ){
 
 	lateral.add( series );
 	
+	function strcmp ( str1, str2 ) { 
+		return ( ( str1 == str2 ) ? 0 : ( ( str1 > str2 ) ? 1 : -1 ) );
+	};
+	
 	// Once all the requests have finished
 	lateral.then(function(){
+		_this._series.sort(function( seriesA, seriesB ){
+			return strcmp(seriesA.key, seriesB.key );
+		});
 		_this.emit( 'series-ready' ); 
 	});
 	
 	return this;
 }
-
+ 
 
 /**
 * Returns the HTML to produce a interactive graph.
@@ -246,6 +219,7 @@ Graph.prototype.html = function(callback, settings ){
 	var defaultSettings = {
 		interactive : true, 
 		series : this._series,
+		groups : this._groups,
 		request: this._request,
 		width: this._width,
 		height: this._height,
