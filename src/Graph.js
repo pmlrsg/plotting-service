@@ -61,10 +61,10 @@ var source_handlers = {};
 /**
 * Get all the valid handlers
 */
-fs.readdir('./source_handlers/', function(err, files){
+fs.readdir(__dirname +'/../source_handlers/', function(err, files){
 	if( err ) throw err;
 	files.forEach(function( file ){
-		var handler = require( '../source_handlers/' + file );
+		var handler = require( __dirname +'/../source_handlers/' + file );
 		source_handlers[ handler.apiName() ] = handler;
 		logger.log( 'info', 'Loaded source handler: ' + handler.apiName() );
 	})

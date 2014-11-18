@@ -131,7 +131,7 @@ SOS_Service.apiName = function(){
 }
 
 SOS_Service.prototype.groups = function(){
-	return []];
+	return [];
 }
 
 /**
