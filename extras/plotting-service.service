@@ -1,0 +1,8 @@
+[Unit]
+Description=Plotting Service
+
+[Service]
+ExecStart=/usr/bin/node /path/to/the/plotting-service/app.js
+
+[Install]
+WantedBy=multi-user.target

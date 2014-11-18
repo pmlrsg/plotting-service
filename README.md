@@ -1,6 +1,6 @@
 # Graphing server
 
-Server to remotely render graphs from various datasets in verious formats.
+Server to remotely render graphs from various datasets in various formats.
 
 ## Requirements
 
@@ -20,3 +20,7 @@ Server to remotely render graphs from various datasets in verious formats.
 * Install dependencies with `npm install`
 * Run development server with `node app` and go here:
 [http://localhost:3000/](http://localhost:3000/)
+
+### Running node perpetually
+
+For more information about running node perpetually can be found in the [extras](https://github.com/pmlrsg/plotting-service/tree/master/extras) folder.
