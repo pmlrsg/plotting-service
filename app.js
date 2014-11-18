@@ -277,6 +277,7 @@ app.post('/svg-to/:format', function(req, res) {
 					tmp.file({ postfix: '.svg' }, function _tempFileCreated(err, path, fd) {
 					   if (err) throw err;
 						data.svgPath = path;
+						data.svgFd = fd;
 						fs.writeFile(path, svgXML);
 						next();
 					});
@@ -285,6 +286,7 @@ app.post('/svg-to/:format', function(req, res) {
 					tmp.file({ postfix: '.png' }, function _tempFileCreated(err, path, fd) {
 					   if (err) throw err;
 						data.pngPath = path;
+						data.pngFd= fd;
 						next();
 					});
 				})
@@ -293,6 +295,19 @@ app.post('/svg-to/:format', function(req, res) {
 						if( err ) throw err;
 
 						res.sendfile( data.pngPath );
+
+						res.on( 'finish', cleanUp );
+						res.on( 'close', cleanUp );
+
+					   function cleanUp(){
+					   	var callback = function(){};
+							fs.unlink( data.svgPath, callback );
+							fs.unlink( data.pngPath, callback );
+
+							fs.close( data.pngFd, callback );
+							fs.close( data.svgFd, callback );
+						}
+						
 					});
 				})
 				
