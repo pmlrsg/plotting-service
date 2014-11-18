@@ -228,7 +228,7 @@ Graph.prototype.html = function(callback, settings ){
 	settings = extend( defaultSettings , settings );
 	
 	// Get the graph javascript
-	fs.readFile(  './graphs/' + this._type + '.js' , function read(err, data) {
+	fs.readFile( __dirname +'/../graphs/' + this._type + '.js' , function read(err, data) {
 	   if( err ){
 	   	err.message = 'Could not find correct graph type \n -- ' + err.message;
 	   	throw err;
@@ -237,7 +237,7 @@ Graph.prototype.html = function(callback, settings ){
 	    var graphJavascript = EJS.render(data.toString(),  settings );
 		
 		//Get the HTML template
-		fs.readFile(  './graphs/template.html' , function read(err, data) {
+		fs.readFile( __dirname + '/../graphs/template.html' , function read(err, data) {
 			if( err ){
 				err.message = 'Could not find graph template \n -- ' + err.message;
 				throw err;
