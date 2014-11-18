@@ -74,7 +74,7 @@ app.param('returnType', /^(svg|png|noninteractive|interactive)$/); //Export type
 //--------------------------
 // TESTING STUFF
 
-app.get('/crossdomain.xml', function(req, res){ return res.sendfile('./crossdomain.xml'); });
+app.get('/crossdomain.xml', function(req, res){ return res.sendfile(__dirname +'/crossdomain.xml'); });
 
 //Testing route
 app.get('/', function(req, res) {
@@ -90,19 +90,19 @@ app.get('/graphs', function(req, res) {
 app.get('/debug', function(req, res) {
 	res.render('debug');
 });
-app.get('/handlebars.min.js', function(req,res){ return res.sendfile('./html/handlebars.min.js'); });
-app.get('/ajax-loader.gif', function(req,res){ return res.sendfile('./html/ajax-loader.gif'); });
+app.get('/handlebars.min.js', function(req,res){ return res.sendfile(__dirname +'/html/handlebars.min.js'); });
+app.get('/ajax-loader.gif', function(req,res){ return res.sendfile(__dirname +'/html/ajax-loader.gif'); });
 
 //--------------------------
 
 
 // Codes bases need to build the graph in phantom/iframe
-app.get('/es5.js', function(req,res){ return res.sendfile('./graphs/es5.js'); });
-app.get('/jquery.min.js', function(req,res){ return res.sendfile('./html/jquery.min.js'); });
-app.get('/nv.d3.js', function(req,res){ return res.sendfile('./lib/nvd3/nv.d3.js'); });
-app.get('/nv.d3.css', function(req,res){ return res.sendfile('./lib/nvd3/nv.d3.css'); });
-app.get('/d3.js', function(req,res){ return res.sendfile('./lib/nvd3/lib/d3.v3.js'); });
-app.get('/template.js', function(req,res){ return res.sendfile('./graphs/template.js'); });
+app.get('/es5.js', function(req,res){ return res.sendfile(__dirname +'/graphs/es5.js'); });
+app.get('/jquery.min.js', function(req,res){ return res.sendfile(__dirname +'/html/jquery.min.js'); });
+app.get('/nv.d3.js', function(req,res){ return res.sendfile(__dirname +'/lib/nvd3/nv.d3.js'); });
+app.get('/nv.d3.css', function(req,res){ return res.sendfile(__dirname +'/lib/nvd3/nv.d3.css'); });
+app.get('/d3.js', function(req,res){ return res.sendfile(__dirname +'/lib/nvd3/lib/d3.v3.js'); });
+app.get('/template.js', function(req,res){ return res.sendfile(__dirname +'/graphs/template.js'); });
 
 
 function makeDomain( options ){

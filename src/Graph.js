@@ -61,10 +61,10 @@ var source_handlers = {};
 /**
 * Get all the valid handlers
 */
-fs.readdir('./source_handlers/', function(err, files){
+fs.readdir(__dirname +'/../source_handlers/', function(err, files){
 	if( err ) throw err;
 	files.forEach(function( file ){
-		var handler = require( '../source_handlers/' + file );
+		var handler = require( __dirname +'/../source_handlers/' + file );
 		source_handlers[ handler.apiName() ] = handler;
 		logger.log( 'info', 'Loaded source handler: ' + handler.apiName() );
 	})
@@ -228,7 +228,7 @@ Graph.prototype.html = function(callback, settings ){
 	settings = extend( defaultSettings , settings );
 	
 	// Get the graph javascript
-	fs.readFile(  './graphs/' + this._type + '.js' , function read(err, data) {
+	fs.readFile( __dirname +'/../graphs/' + this._type + '.js' , function read(err, data) {
 	   if( err ){
 	   	err.message = 'Could not find correct graph type \n -- ' + err.message;
 	   	throw err;
@@ -237,7 +237,7 @@ Graph.prototype.html = function(callback, settings ){
 	    var graphJavascript = EJS.render(data.toString(),  settings );
 		
 		//Get the HTML template
-		fs.readFile(  './graphs/template.html' , function read(err, data) {
+		fs.readFile( __dirname + '/../graphs/template.html' , function read(err, data) {
 			if( err ){
 				err.message = 'Could not find graph template \n -- ' + err.message;
 				throw err;

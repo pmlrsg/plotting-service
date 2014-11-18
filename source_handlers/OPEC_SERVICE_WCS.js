@@ -200,7 +200,6 @@ OPEC_Service.prototype.buildSourceUrl = function( dataSource ){
 	
 	queryData.time = dataSource.t_bounds.map(function( dateString ){
 		var date = new Date( dateString );
-		//date = date.getFullYear() + "-" + date.getMonht() + "-" + date.getDate();
 		return date.toISOString();
 	}).join( '/' );
 	

@@ -130,6 +130,10 @@ SOS_Service.apiName = function(){
 	return "SingleStation_SERVICE_SOS";
 }
 
+SOS_Service.prototype.groups = function(){
+	return [];
+}
+
 /**
 * Calls the function to make the correct series from the downloaded data
 */
