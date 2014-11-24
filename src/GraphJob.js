@@ -179,6 +179,9 @@ GraphJob.prototype.getWidthAndHeight = function( req ){
 //---------------------------------
 // Getters and setters
 GraphJob.prototype.graphRequest = function( request ){
+
+   logger.log('info', 'New Job', { job_id : this.id(), request : request });
+
 	this._request = request;
 	return this;
 };

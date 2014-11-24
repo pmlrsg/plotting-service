@@ -385,9 +385,10 @@
 			function submitRequest( request ){
 				$.ajax({
 					'url': 'plot',
-					'data': JSON.stringify( request ),
+					'data': JSON.stringify({request: request}),
 					'dataType': 'json',
 					'method': 'post',
+					'contentType': 'application/json',
 					success : function( data ){
 						var templateData = {
 							job_id: data.job_id,

@@ -20,7 +20,8 @@
     "body-parser": "~1.9.2",
     "svg2png": "~1.1.0",
     "temporary": "0.0.8",
-    "tmp": "0.0.24"
+    "tmp": "0.0.24",
+    "uid": "0.0.2"
   },
   "repository": {
     "type": "git",

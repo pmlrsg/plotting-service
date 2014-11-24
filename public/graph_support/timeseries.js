@@ -1,91 +1,5 @@
 
 /**
-*
-* Due to the way that NVD3 works we must find if the data can be displaed in a valid graph type 
-*/
-window.testData = function(){
-	/// Validate the series are correct
-	
-	var sides = {
-		left: null,
-		right : null
-	}
-	
-	var errorMessage = "";
-	
-	var result = series.every(function( series ){
-		if( series.yAxis == null ){
-			var errorMessage = 'All series must have a yAxis property. Did not : ' + series.key;
-			return false;
-		}
-		if( series.values == null || ! Array.isArray( series.values ) ){
-			var errorMessage = 'All series need a set of values Did not : ' + series.key;
-			return false;
-		}
-		if( series.type == null ){
-			var errorMessage = 'All series must have a type property. Did not : ' + series.key;
-			return false;
-		}
-		
-		if( series.scale === void( 0 ) )
-			series.scale = 'linear';
-		
-		
-		if( series.yAxis == 1 ){
-			var side = 'left'
-		}else if( series.yAxis == 2 ){
-			var side = 'right'
-		}else{
-			var errorMessage = 'All series must have a yAxis property. Did not : ' + series.key;
-			return false;
-		}
-		
-		if( sides[side] !== series.type && sides[side] !== null ){
-			// Error, the same side whats different types (not doable)
-			var errorMessage = 'Each axis of the graph must have exactly one graph type (bar|line|etc..). Did not : ' + series.key;
-			return false;
-		}else{
-			sides[side] = series.type
-		}
-		return true;
-	});
-	
-	
-	if( !result )
-		return [ false, errorMessage ];
-	
-	// Test the needed graph type exists
-	
-	var nvModels = Object.keys(nv.models);
-	
-	if( sides.left === null )
-		var regex = "[A-Za-z]+Plus" + sides.right + "WithFocusChart"
-	else if( sides.right === null )
-		var regex =  sides.left +"Plus[A-Za-z]+WithFocusChart"
-	else
-		var regex = sides.left + "Plus" + sides.right + "WithFocusChart"
-	
-	regex = new RegExp(regex, 'i');
-	
-	var validModel = nvModels.some(function( model ){
-		return regex.exec( model );
-	})
-	
-	if( ! validModel ){
-		result = false;
-		errorMessage = "NVD3 does not have a valid model that supports " + regex;
-	}
-	
-	
-	if( !result )
-		return [ false, errorMessage ];
-	else
-		return [true];
-	
-	
-} 
-
-/**
  * Returns a scale from a scale name
  * @param  {String} scaleType The name of the scale you want
  * @return {[Object]}           The D3 scale object
@@ -102,12 +16,6 @@ function getScale( scaleType ){
 	}
 }
 
-// For each series convert the x values into timestamps
-series.forEach(function( singleSeries ){
-	singleSeries.values.forEach(function( points ){
-		points.x = new Date( points.x ).getTime();
-	});
-});
 
 function autoScale( axis ){
 
@@ -177,7 +85,7 @@ function autoScale( axis ){
 };
 
 
-function makeGraph( series ) {
+function makeGraph( series, request ) {
 
 	//Creates a new line graph
 	var chart = nv.models.linePlusLineWithFocusChart()
@@ -246,20 +154,13 @@ function makeGraph( series ) {
 	    }
     }
 	
-	// Should the chart show the inactive bar
-	// If we are rendering the PNG or SVG then no we shouldnt
-	if( ! interactive ){
-		chart.contextChart(false);
-		chart.contextChartSpacing(false);
-	}
-	
 	d3.select( container)
 		.datum( series )
 		.transition().duration(500)
 		.call(chart);
 
    
-   if( interactive ){
+   if( graphController.showContextBrushByDefault() ){
       var min = Infinity;
       var max = 0;
       series.forEach(function( series ){
