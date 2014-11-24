@@ -156,6 +156,7 @@ OPEC_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 		//Make a new series
 		var newSeries = {
 			label : this._series.label + ' ' + variable, //graph name
+			key: uid(),
 			type : 'line', //graph type (line|bar|etc...)
 			yAxis : this._series.yAxis, //graph axis
 			disabled : defaltVariables.indexOf( variable) == -1,
