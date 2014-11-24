@@ -4,13 +4,12 @@ var querystring = require('querystring');
 var Domain = require('domain');
 var request = require('request');
 var memoizee = require( 'memoizee' );
-var Sequence = exports.Sequence || require('sequence').Sequence;
 var cachedRequest = memoizee(request,  { async: true });
-var os = require('os');
-var dns = require('dns');
+var Sequence = exports.Sequence || require('sequence').Sequence;
+
 var url = require('url');
 var clone = require('clone');
-
+var uid = require('uid');
 
 
 
@@ -138,7 +137,7 @@ OPEC_Service.prototype.seriesFormatters = {};
 OPEC_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 	this._formatedSeries = [];
 	this._formatedGroups = [];
-	groupKey = uuid();
+	groupKey = uid();
 
 	this._formatedGroups.push( {
       groupLabel: this._series.label,
