@@ -61,10 +61,10 @@ var source_handlers = {};
 /**
 * Get all the valid handlers
 */
-fs.readdir('./source_handlers/', function(err, files){
+fs.readdir(__dirname +'/../source_handlers/', function(err, files){
 	if( err ) throw err;
 	files.forEach(function( file ){
-		var handler = require( '../source_handlers/' + file );
+		var handler = require( __dirname +'/../source_handlers/' + file );
 		source_handlers[ handler.apiName() ] = handler;
 		logger.log( 'info', 'Loaded source handler: ' + handler.apiName() );
 	})
@@ -143,7 +143,25 @@ Graph.prototype.getDataSources = function( series ){
 	
 	return this;
 }
- 
+
+
+/**
+* Returns the JSON data needed for the page to be built
+*/
+Graph.prototype.json = function(){
+	
+	return {
+		series : this._series,
+		groups : this._groups,
+		request: this._request,
+	};
+	
+}
+
+
+
+////////////////////////////////////////////////
+////////////////// Totally not needed bellow
 
 /**
 * Returns the HTML to produce a interactive graph.
@@ -228,7 +246,7 @@ Graph.prototype.html = function(callback, settings ){
 	settings = extend( defaultSettings , settings );
 	
 	// Get the graph javascript
-	fs.readFile(  './graphs/' + this._type + '.js' , function read(err, data) {
+	fs.readFile( root +'/public/' + this._type + '.js' , function read(err, data) {
 	   if( err ){
 	   	err.message = 'Could not find correct graph type \n -- ' + err.message;
 	   	throw err;
@@ -237,7 +255,7 @@ Graph.prototype.html = function(callback, settings ){
 	    var graphJavascript = EJS.render(data.toString(),  settings );
 		
 		//Get the HTML template
-		fs.readFile(  './graphs/template.html' , function read(err, data) {
+		fs.readFile( root +'/app/views/template.ejs' , function read(err, data) {
 			if( err ){
 				err.message = 'Could not find graph template \n -- ' + err.message;
 				throw err;
@@ -319,153 +337,6 @@ Graph.prototype.loadGraphInPhantomPage = function( callback, width, height ){
 }
 
 
-Graph.prototype.svg = function( callback, width, height ){
-	logger.log('info', 'Generating svg', { job_id : Domain.active.job.id(), width : width, height: height });
-		
-	var _this = this;
-	
-	var width = width || this.width();
-	var height = height || this.height();
-	
-	var sequence = Sequence.create();
-	var data = {};
-	
-	//Get the active domain, some functions bellow need to be rewraped
-	var domain = Domain.active;
-	
-	sequence
-		
-		.then(domain.bind(function( next ){
-			_this.loadGraphInPhantomPage(function( page ){
-				data.page = page;
-				next();
-			},width, height);
-		}))
-		
-		/**
-		* Gets the nv.d3.css file so that we can inject it into the SVG later
-		*/
-		.then(function( next ){
-			//logger.log('info', 'Reading nv.d3.min.css', { job_id : _this.id() });
-			
-			//Readfile needs the domain reset
-			fs.readFile(config.nvd3Path + 'nv.d3.min.css', domain.bind(function(err, css ){
-				if (err){
-					err.message  =  "Could not read nv.d3.min.css for SVG converstion \n--" +err.message
-					throw err;
-				}
-				data.css = css;
-				next();
-			}))
-		})
-		/**
-		* Pulls the SVG out of the phantom page.
-		*  - Also adds the style sheet INSIDE the SVG because nv.d3 uses an external sheet by default
-		*/
-		.then(domain.bind(function( next ){
-			
-			data.svg = data.page.evaluate(function( css ){
-			
-				//String is converted into array of ints for some reason ?
-				css = css.map(function( charCode ){ return String.fromCharCode(charCode); }).join("");
-				
-				//Insert style into the SVG element
-				var element = document.querySelector('svg');
-				
-				var styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
-				styleElement.setAttribute('type', "text/css");
-				styleElement.textContent = css;
-				element.appendChild(styleElement)
-				
-				//Return the SVG
-				return document.body.innerHTML;
-				
-			}, function( result ){
-				// Check the return is a string of at least 20
-				if( typeof result != 'string' || result.length < 20  )
-					throw new Error("SVG failed to render in PhantomJs");
-					
-				data.svg = result;
-				data.page.exitPhantom();
-				next();
-			}, data.css);
-		}))
-		
-		
-		/**
-		* SUCCESS
-		*/
-		.then(domain.bind(function( next ){
-			callback( data.svg );
-			next();
-		}))
-
-};
-
-
-
-
-
-
-/**
-* Return the path to a png of the graph with the required width and height
-*
-* @param {int} width Width of the image in pixels
-* @param {int} height Height of the image in pixels
-* @param {Function} callback A callback which will be passed 1 paramater with which be the absoulte path to the new file.
-*/
-Graph.prototype.png = function( callback, width, height ) {
-	logger.log('info', 'Generating png', { job_id : Domain.active.job.id() });
-		
-	var _this = this;
-	
-	var width =  width || this.width();
-	var height = height || this.height();
-	
-	var sequence = Sequence.create();
-	var data = {};
-	
-	sequence
-		.then(function( next ){
-			_this.loadGraphInPhantomPage(function( page ){
-				data.page = page
-				next();
-			},width, height)
-		})
-		
-		/**
-		* Returns a path to store a temporary file
-		*/
-		.then(function( next ){
-			_this.job().tmpFile(function ( pngPath ) {
-				data.pngPath = pngPath;
-				next();
-			}, 'png');
-		})
-		
-		/**
-		* Pulls the SVG out of the phantom page.
-		*  - Also adds the style sheet INSIDE the SVG because nv.d3 uses an external sheet by default
-		*/
-		.then(function( next ){
-			data.page.render( data.pngPath, function(){
-				next();
-			});
-			
-		})
-		
-		/**
-		* SUCCESS
-		*/
-		.then(function( next ){
-			callback( data.pngPath );
-				data.page.exitPhantom();
-			next();
-		})
-
-};
-
-
 
 
 /**
@@ -513,12 +384,19 @@ Graph.prototype.job = function(_){
 
 Graph.prototype.width = function(_) {
 	if (!arguments.length) return this._width;
-		this._width = _;
+	this._width = _;
 	return this;
 };
 Graph.prototype.height = function(_) {
 	if (!arguments.length) return this._height;
-		this._height = _;
+	this._height = _;
+	return this;
+};
+
+
+Graph.prototype.type = function(_) {
+	if (!arguments.length) return this._type;
+	this._type = _;
 	return this;
 };
 

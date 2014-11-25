@@ -1,0 +1,18 @@
+[Unit]
+Description=Plotting Service
+
+[Service]
+ExecStart=/usr/bin/node /path/to/the/plotting-service/app.js
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=plotting-service
+SyslogFacility=syslog
+User=nobody
+Group=nobody
+NoNewPrivileges=true
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+

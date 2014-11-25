@@ -16,7 +16,8 @@
 		<script src="<%- config.serverAddress %>/d3.js"></script>
 		<script src="<%- config.serverAddress %>/nv.d3.js"></script>
 		<script src="<%- config.serverAddress %>/es5.js"></script>
-		<script src="<%- config.serverAddress %>/template.js"></script>
+		<script src="<%- config.serverAddress %>/graph_support/general.js"></script>
+		<script src="<%- config.serverAddress %>/graph_support/timeseries.js"></script>
 
 		<style>
 			body{
@@ -184,14 +185,7 @@
 			var containerId = 'chart';
 
          // These are populated from Node
-         var series = <%- JSON.stringify( series ) %>;
-         var groups = <%- JSON.stringify( groups ) %>;
-         var request = <%- JSON.stringify( request ) %>;
-         var interactive = <%- interactive ? "true":"false" %>;
-
-			
-			// This is the script required to build the request graph type
-			<%- graphJavascript %>
+         var graphId = <%- graphId %>;
 
 		</script>
 		<script id="series-template" type="text/x-handlebars-template">
