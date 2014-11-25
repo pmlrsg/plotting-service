@@ -460,7 +460,7 @@ var graphController = {
 
       $('<form>')
         .attr('method', 'post')
-        .attr('action', root + "/svg-to/" + format )
+        .attr('action', root + "/plots/" + plotId + '/download' )
         .append( $('<input>').attr('type','hidden').attr('name','svg').val( svg ) )
         .appendTo('body')
         .submit();
@@ -471,6 +471,21 @@ var graphController = {
     console.log( complexLog );
     alert( niceErrorMessage );
   },
+
+  downloadInit: false,
+  downloadPopup: function(){ 
+    if( this.downloadInit == false ){
+      downloadInit = true;
+      $('.js-close-download-popup').click(function( e ){
+        if( e.target != this )
+          return;
+        $('.js-download-popup').hide();
+      });
+      $('.js-download').click( this.download.bind(this) );
+    };
+    $('.js-download-popup').show();
+  },
+
   /**
    * Starts of the process of building graph.
    * Downloads the graph data and then calls initChart
@@ -483,7 +498,7 @@ var graphController = {
     var _this = this;
     $.ajax({
       dataType: "json",
-      url: root + "/job/" + graphId + "/data",
+      url: root + "/job/" + plotId + "/data",
       success: function( data ){
           _this.initChart( data );
         try{

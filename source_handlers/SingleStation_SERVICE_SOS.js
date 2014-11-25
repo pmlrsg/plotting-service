@@ -173,6 +173,7 @@ SOS_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 		//Make a new series
 		var newSeries = {
 			label : subSeries.label, //graph name
+			key: uid(),
 			type : subSeries.type, //graph type (line|bar|etc...)
 			yAxis : subSeries.yAxis, //graph axis
 			values: [], // place to store the points

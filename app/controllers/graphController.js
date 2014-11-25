@@ -65,7 +65,7 @@ graphController.show = function( req, res, next ){
       switch( returnType ){
          case "interactive":
             res.render( 'graphs/' + graph.type(),{
-               graphId: job.id()
+               plotId: job.id()
             } );
             break;
          case "data":

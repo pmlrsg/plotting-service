@@ -178,6 +178,64 @@
 			.clearfix:after {
 			    clear: both;
 			}
+
+			.backdrop{
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				right: 0px;
+				bottom: 0px;
+				background-color: rgba( 0, 0, 0, 0.5 );
+				display: none;
+			}
+			.download-outer-wrap{
+				display: table;
+				height: 100%;
+				width: 100%;
+			}
+			.download-inner-wrap{
+				display: table-cell;
+				vertical-align: middle;
+				text-align: center;
+			}
+			#download-content{
+				background-color: #B1A7BC;
+				display: inline-block;
+				padding: 10px;
+				border-radius: 3px;
+				width: 214px;
+			}
+
+			#download-content h3{
+				margin-top: 3px;
+			}
+
+			#download-content td{
+				width: 50%;
+				text-align: left;
+			}
+
+			#download-content button{
+				width: 90%;
+				border-radius: 5px;
+				border: none;
+				padding: 5px;
+				background-color: ivory;
+				font-size: 16px;
+				margin: 6px;
+				cursor: pointer;
+			}
+			#download-content button:hover{
+				box-shadow: inset 0px 2px 14px -7px rgba(0,0,0,0.75);
+			}
+
+			.align-right{
+				text-align: right;
+			}
+
+			.fa-close{
+				cursor: pointer;
+			}
 		</style>
 		<script>
 
@@ -185,7 +243,7 @@
 			var containerId = 'chart';
 
          // These are populated from Node
-         var graphId = <%- graphId %>;
+         var plotId = <%- plotId %>;
 
 		</script>
 		<script id="series-template" type="text/x-handlebars-template">
@@ -270,12 +328,62 @@
 				</div>
 
 				<div>
-					<h2>Download</h2>
-					<button onclick="graphController.download('svg');">SVG</button>
-					<button onclick="graphController.download('png');">PNG</button>
+					<button onclick="graphController.downloadPopup();">Download</button>
 				</div>
 			</div>
 			<div id="logos"></div>
 		</div>
+		<div class="backdrop js-close-download-popup js-download-popup">
+			<div class="download-outer-wrap js-close-download-popup">
+				<div class="download-inner-wrap js-close-download-popup">
+					<div id="download-content">
+						<i class="fa fa-close pull-right js-close-download-popup"></i>
+						<h3>Select your formats</h3>
+						<table>
+							<tbody>
+								<tr>
+									<td>
+										<label>
+											<input type="checkbox" checked />
+											PNG
+										</label>
+									</td>
+
+									<td>
+										<label>
+											<input type="checkbox" checked />
+											Logos
+										</label>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<label>
+											<input type="checkbox" checked />
+											SVG
+										</label>
+									</td>
+									<td>
+										<label>
+											<input type="checkbox" checked />
+											Meta Data
+										</label>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<label>
+											<input type="checkbox" checked />
+											CSV
+										</label>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<button class="js-close-download-popup js-download">Download</button>
+					</div>
+				</div>
+			</div>
+			</div>
 	</body>
 </html>
