@@ -217,7 +217,8 @@ SOS_Service.prototype.buildSourceUrl = function( dataSource, sub_series ){
 	queryData.request = "getObservation";
 	queryData.version = "1.0.0";
 	queryData.offering = dataSource.station_name;
-	queryData.responseFormat='text%2Fxml%3Bschema%3D"om%2F1.0.0"'
+	//queryData.responseFormat='text%2Fxml%3Bschema%3D"om%2F1.0.0"'
+	queryData.responseFormat='text%2Fxml%3Bsubtype%3D%22om%2F1.0.0%22'
 
 	queryData.observedProperty = sub_series.map(function(obj) {
 		return obj.observed_property;
