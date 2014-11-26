@@ -102,7 +102,7 @@ Graph.prototype.getDataSources = function( series ){
 	var _this = this;
 	_this._series = [];
 	
-	_this.sourceHandlers = [];
+	_this._sourceHandlers = [];
 	
 	var eachDataSource = function( complete, item, i ){
 		
@@ -114,7 +114,7 @@ Graph.prototype.getDataSources = function( series ){
 		
 		var handler = new (source_handlers[ item.handler ])( _this._type , item);
 		
-		_this.sourceHandlers.push( handler );
+		_this._sourceHandlers.push( handler );
 		
 		//When the source handler has data, mark the lateral handler as done
 		handler.on('series-ready', function(){
@@ -156,6 +156,18 @@ Graph.prototype.json = function(){
 		request: this._request,
 	};
 	
+}
+
+
+/**
+* Returns the data as a CSV
+*/
+Graph.prototype.csv = function( sourceHandlerId ){
+	if( this._sourceHandlers.length <= sourceHandlerId )
+		throw new Error( "Source handler at index " + sourceHandlerId + " does not exist." );
+
+	var handler = this._sourceHandlers[ sourceHandlerId ];
+	return handler.csv()
 }
 
 
@@ -351,7 +363,7 @@ Graph.prototype.loadGraphInPhantomPage = function( callback, width, height ){
 */
 Graph.prototype.progress = function() {
 	
-	var sources = this.sourceHandlers.map(function( handler ){
+	var sources = this._sourceHandlers.map(function( handler ){
 		var data = {
 			sourceName: handler.sourceName(),
 			percentage: handler.percentage(),
@@ -399,6 +411,21 @@ Graph.prototype.type = function(_) {
 	this._type = _;
 	return this;
 };
+
+Graph.prototype.request = function(_) {
+	if (!arguments.length) return this._request;
+	this._request = _;
+	return this;
+};
+
+
+Graph.prototype.sourceHandlers = function(_) {
+	if (!arguments.length) return this._sourceHandlers;
+	this._sourceHandlers = _;
+	return this;
+};
+
+
 
 
 

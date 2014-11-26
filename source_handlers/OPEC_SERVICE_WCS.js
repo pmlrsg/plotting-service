@@ -10,6 +10,7 @@ var Sequence = exports.Sequence || require('sequence').Sequence;
 var url = require('url');
 var clone = require('clone');
 var uid = require('uid');
+var csv = require('to-csv');
 
 
 
@@ -87,8 +88,6 @@ function OPEC_Service( type, series, domain ){
 			   	throw err;
 		   }
 		   
-		   ////////////////////////////////////////////////////////////////////REMEMBER YOU PUT THIS HERE. REMVOE IT. IT DISABLES REQUESTS.
-		   //return;
 		   // Read and process the output
 			_this._data = JSON.parse( body ).output.data;
 			_this.makeSeries();
@@ -238,6 +237,30 @@ OPEC_Service.prototype.sourceName = function(){
 	return this._dataSource.coverage;
 }
 
+
+OPEC_Service.prototype.csv = function(){
+	var titles = {
+		datetime: "Date",
+		min: "Min",
+		max: "Max",
+		mean: "Mean",
+		median: "median",
+		std: "Standard Deviation",
+	};
+	var rows = [];
+	for( var i in this._data ){
+		var row = this._data[i];
+		row.datetime = i;
+		rows.push( row );
+	}
+	rows.sort(function( a, b ){
+		return new Date( a ) - new Date( b ); 
+	});
+
+	return csv( [titles].concat( rows ), {
+		headers: false
+	} );
+}
 
 
 

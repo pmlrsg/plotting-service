@@ -457,11 +457,16 @@ var graphController = {
     this.svg(startDownload);
 
     function startDownload( svg ){
+      var inputs = [];
+
+      inputs.push(   );
 
       $('<form>')
         .attr('method', 'post')
-        .attr('action', root + "/plots/" + plotId + '/download' )
+        .attr('action', root + "/plot/" + plotId + '/download' )
         .append( $('<input>').attr('type','hidden').attr('name','svg').val( svg ) )
+        .append( $('#download-content input[type=checkbox]:checked').clone() )
+        .hide()
         .appendTo('body')
         .submit();
     };
@@ -469,13 +474,13 @@ var graphController = {
   },
   error: function( niceErrorMessage, complexLog ){
     console.log( complexLog );
-    alert( niceErrorMessage );
+    $('body').html( niceErrorMessage );
   },
 
   downloadInit: false,
   downloadPopup: function(){ 
     if( this.downloadInit == false ){
-      downloadInit = true;
+      this.downloadInit = true;
       $('.js-close-download-popup').click(function( e ){
         if( e.target != this )
           return;
@@ -500,8 +505,8 @@ var graphController = {
       dataType: "json",
       url: root + "/job/" + plotId + "/data",
       success: function( data ){
-          _this.initChart( data );
         try{
+          _this.initChart( data );
         }catch(e){
           _this.error( "Could not download the data.", e );
         };

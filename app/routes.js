@@ -19,17 +19,19 @@ function routes( app ){
 
    // URL parameters
    app.param('id', /^\d+$/); //job_id
-   app.param('returnType', /^(data|interactive)$/); //Export types for graphs
+   app.param('sourceHandlerId', /^\d+$/); //job_id
+   app.param('returnType', /^(data|interactive|csv)$/); //Export types for graphs
 
 
    // Graphs
    app.post('/plot', controllers.graph.create);
    app.get('/plot/:id/status', controllers.graph.status);
-   app.get('/plot/:id/:returnType', controllers.graph.show);
+   app.post('/plot/:id/download', controllers.graph.download);
+   app.get('/plot/:id/:returnType/:sourceHandlerId?', controllers.graph.show);
 
    // Legacy support, to be removed
-      app.get('/job/:id/status', controllers.graph.status);
-      app.get('/job/:id/:returnType', controllers.graph.show);
+   app.get('/job/:id/status', controllers.graph.status);
+   app.get('/job/:id/:returnType', controllers.graph.show);
 
 
    // SVG Converts

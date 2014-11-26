@@ -11,6 +11,7 @@ var dns = require('dns');
 var url = require('url');
 var clone = require('clone');
 var xml2js = require('xml2js');
+var uid = require('uid');
 
 
 Array.prototype.first = function(){
