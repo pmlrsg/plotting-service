@@ -6,6 +6,7 @@ var request = require('request');
 var archiver = require('archiver');
 var path = require('path');
 var Lateral = require('lateral').Lateral;
+var Increment = require("incr");
 
 
 
@@ -104,7 +105,12 @@ graphController.download = function( req, res, expressNext ){
       return res.send( 404, "Job not found" );
    var graph = job._graph;
 
+   // Get formats the user wants to download
    var formats = req.param( 'formats' );
+   if( ! ( formats instanceof Array ) )
+      next( new Error( 'No valid resources where requested.' ) );
+
+   // Get the built SVG, swap this out for server side recreation
    var svg = req.param( 'svg' );
 
 
@@ -119,97 +125,63 @@ graphController.download = function( req, res, expressNext ){
    archive.pipe( res );
 
    // Que up the different resources needed for ziping
-   var lateral = Lateral.create(downloadResource, 5);
-   var requests = [];
+   var lateral = Lateral.create(runResourceFunction, 5);
+   lateral.push = function( item ){
+      this.add( [item] );
+   };
+   function runResourceFunction( complete, item, i ){
+      item( complete, item, i );
+   }
    var errorLog = [];
 
-   for( var i = 0; i < formats.length; i++ )
-      lateral.add( makeResourceRequest( formats[i] ) );
+   // Add the PNG if asked for
+   if( formats.indexOf( "png" ) > -1 ){
+      
+      // Wrap function runnable by lateral
+      var addPng = function( complete, _, i ){
 
-   lateral.then(finish);
+         // Paramaters for the request
+         var pngParamaters = {
+            method: 'POST',
+            url: loopback + '/svg-to/png',
+            form: { svg: svg },
+            encoding: null // tells request to return a Buffer as body
+         };
 
-   /**
-    * Returns and array of resource requests needed to
-    * be to downloaded and zipped up
-    */
-   function makeResourceRequest( format ){
-      var requests = [];
-
-      switch( format ){
-         case "png":
-            requests.push({
-               request: {
-                  method: 'POST',
-                  url: loopback + '/svg-to/png',
-                  form: { svg: svg }
-               },
-               fileName : "image-png.png"
-            });
-            break;
-         case "svg":
-            requests.push({
-               request: {
-                  method: 'POST',
-                  url: loopback + '/svg-to/svg',
-                  form: { svg: svg }
-               },
-               fileName : "image-svg.svg"
-            });
-            break;
-         case "csv":
-            var handlers = graph.sourceHandlers();
-            for( var i = 0; i < handlers.length; i++ )
-               requests.push({
-                  request: {
-                     method: 'GET',
-                     url: loopback + '/plot/' + job.id() + '/csv/' + i
-                  },
-                  fileName : handlers[i].sourceName() + ".csv"
-               });
-            break;
-         case "logos":
-            if( graph.request().style && Array.isArray( graph.request().style.logos ) ){
-               var logos = graph.request().style.logos;
-               for( var i = 0; i < logos.length; i++ ){
-                  var logo = logos[i];
-                  requests.push({
-                     request: {
-                        method: 'GET',
-                        url: logo,
-                     },
-                     fileName : 'logos/' + path.basename(logo)
-                  });
-               }
-            }
-            break;
-      };
-
-      return requests;
-   }
-
-
-   /**
-    * Download the resource and add it the the zip file
-    */
-   function downloadResource( complete, item, i ){
-      item.request.encoding = null;
-      request(
-         item.request,
-         function( err, httpResponse, body ){
+         // Callback to the add the png to the archive
+         var pngCallback = function( err, httpResponse, body ){
             if( err ){
-               errorLog.push( item.fileName + " failed to be created - " + err );
+               errorLog.push( "PNG failed to be created - " + err );
             }else{
-               archive.append( body , { name: item.fileName })
+               archive.append( body , { name: 'image-png.png' })
             }
             complete();
-         }
-      )
+         };
+
+         request( pngParamaters, pngCallback );
+      }
+      // Add the function to the lateral que
+      lateral.push( addPng );
+   };
+
+   // Add the SVG is asked for
+   if( formats.indexOf( "svg" ) > -1 ){
+      archive.append( svg , { name: 'image-svg.svg' })
    }
+
+   // Pass everything else to the source handles
+   graph.sourceHandlers().forEach( getSourceHandlerResources );
+   function getSourceHandlerResources( sourceHandler ){
+      lateral.push(function( complete, _, i ){
+         sourceHandler.addResourcesToArchive( formats, archive, complete );
+      });
+   }
+
    /**
     * Once all the files are downloaded save the error log
     * to the zip and export the zip to the browser
-    * @return {[type]} [description]
     */
+   lateral.then(finish);
    function finish(){
       if( errorLog.length > 0 )
          archive.append( errorLog.join("\n") , { name: 'errors.txt' })

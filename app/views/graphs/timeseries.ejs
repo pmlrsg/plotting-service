@@ -210,9 +210,10 @@
 				margin-top: 3px;
 			}
 
-			#download-content td{
+			#download-formats div{
 				width: 50%;
 				text-align: left;
+				float: left;
 			}
 
 			#download-content button{
@@ -245,6 +246,15 @@
          // These are populated from Node
          var plotId = <%- plotId %>;
 
+		</script>
+
+		<script id="download-type-template" type="text/x-handlebars-template">
+			<div>
+				<label>
+					<input type="checkbox" name="formats[]" checked value="{{ key }}" >
+					{{ label }} 
+				</label>
+			</div>
 		</script>
 		<script id="series-template" type="text/x-handlebars-template">
 			{{#each groups}}
@@ -339,46 +349,7 @@
 					<div id="download-content">
 						<i class="fa fa-close pull-right js-close-download-popup"></i>
 						<h3>Select your formats</h3>
-						<table>
-							<tbody>
-								<tr>
-									<td>
-										<label>
-											<input type="checkbox" checked name="formats[]" value="png" />
-											PNG
-										</label>
-									</td>
-									<td>
-										<label>
-											<input type="checkbox" checked name="formats[]" value="logos" />
-											Logos
-										</label>
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<label>
-											<input type="checkbox" checked name="formats[]" value="svg" />
-											SVG
-										</label>
-									</td>
-									<td>
-										<label>
-											<input type="checkbox" checked name="formats[]" value="meta-data" />
-											Meta Data
-										</label>
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<label>
-											<input type="checkbox" checked name="formats[]" value="csv" />
-											CSV
-										</label>
-									</td>
-								</tr>
-							</tbody>
-						</table>
+						<div id="download-formats"></div>
 						<button class="js-close-download-popup js-download">Download</button>
 					</div>
 				</div>

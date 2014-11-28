@@ -6,14 +6,15 @@ var request = require('request');
 var memoizee = require( 'memoizee' );
 var cachedRequest = memoizee(request,  { async: true });
 var Sequence = exports.Sequence || require('sequence').Sequence;
+var Lateral = require('lateral').Lateral;
 
 var url = require('url');
 var clone = require('clone');
 var uid = require('uid');
 var csv = require('to-csv');
+var imageType = require('image-type');
 
-
-
+// Utils
 Array.prototype.first = function(){
 	return this[0];
 }
@@ -22,11 +23,11 @@ Array.prototype.last = function(){
 	return this[ this.length - 1 ];
 }
 
-
 function capitaliseFirstLetter(string)
 {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
+
 
 /**
 * Constructor for the OPEC python data getter/formater
@@ -42,6 +43,8 @@ function OPEC_Service( type, series, domain ){
 	this._series = series;
 	this._formatedSeries = [];
 	this._type = type;
+
+	this._label = this._series.label;
 	
 	this._estimatedEndTime = null;
 	
@@ -238,13 +241,13 @@ OPEC_Service.prototype.sourceName = function(){
 }
 
 
-OPEC_Service.prototype.csv = function(){
+OPEC_Service.prototype.resourceCsv = function( archiver, folderName, callback){
 	var titles = {
 		datetime: "Date",
 		min: "Min",
 		max: "Max",
 		mean: "Mean",
-		median: "median",
+		median: "Median",
 		std: "Standard Deviation",
 	};
 	var rows = [];
@@ -254,12 +257,96 @@ OPEC_Service.prototype.csv = function(){
 		rows.push( row );
 	}
 	rows.sort(function( a, b ){
-		return new Date( a ) - new Date( b ); 
+		return new Date( a.datetime ) - new Date( b.datetime ); 
 	});
 
-	return csv( [titles].concat( rows ), {
+	var csvStr = csv( [titles].concat( rows ), {
 		headers: false
-	} );
+	});
+
+	archiver.append( csvStr, { name: folderName + 'data.csv' } );
+
+	callback();
+}
+
+OPEC_Service.prototype.resourceMetaData = function( archiver, folderName, callback){
+	var metaData = this._series.meta;
+	if( !( this._series.markdown instanceof Array ) || this._series.markdown.length == 0 )
+		finish();
+
+	var lateral = Lateral.create(function( complete, item, i ){
+		request({
+			url: item,
+		}, function( err, response, body ){
+			if( ! err  && response.statusCode == 200){
+				metaData += "<br><br>";
+				metaData += body;
+			}
+			complete();
+		});
+	}, 5);
+	lateral.add( this._series.markdown );
+
+	lateral.then(finish);
+	
+	function finish(){
+		archiver.append( metaData, { name: folderName + 'meta-data.html' } );
+		callback();
+	}
+}
+
+OPEC_Service.prototype.resourceLogos = function( archiver, folderName, callback){
+	var metaData = this._series.meta;
+
+	request({
+		url: this._series.logo,
+		encoding: null,
+	}, function( err, response, body ){
+		if( ! err && response.statusCode == 200){
+			var ext = 'png';
+			archiver.append( body, { name: folderName + 'logo.' + imageType( body ) } );
+		};
+		callback();
+	});
+}
+
+
+/**
+ * Returns a zip of folders containing the request resources
+ * @param  {Array} resources The resources you need
+ * @param  {Function} callback The call back with the zip data
+ * @return {ZipFIle)           The zip of files
+ */
+OPEC_Service.prototype.addResourcesToArchive = function( resources, archive, callback){
+	if( ! ( resources instanceof Array ) )
+		return callback();
+
+	var changeCase = require('change-case');
+	var _this = this;
+	var total = 0;
+	var count = 0;
+	var stillAdding = true;
+	var folderName = this._label + '/';
+	// For each resource tell them to put the resource in the zip
+	resources.forEach(function( resource ){
+		var functionName = changeCase.camel( 'resource-' + resource  )
+		if( _this[functionName] instanceof Function ){
+			total++;
+			_this[functionName]( archive, folderName, resourceCollected );
+		}
+	});
+
+	stillAdding = false;
+	function resourceCollected(){
+		count++;
+		if( count == total && stillAdding == false )
+			callback( archive );
+	}
+
+	// Callback now because nothing was asked for
+	if( total == 0 || ( count == total && stillAdding == false ) )
+		callback( archive );
+
 }
 
 
@@ -323,18 +410,12 @@ OPEC_Service.prototype.calculateEstimatedEndTime = function(){
 	var sequence = Sequence.create();
 	var data = {};
 	data.timeSliceSampleSize = 20;
+			data.pingTime = 50;
 	var _this = this;
 	
 	
 	sequence
 		
-		
-		.then(domain.bind(function(next){
-			data.pingTime = 50;
-			next();
-		}))
-		
-	
 		/**
 		* Get the meta data for the indicator
 		* This will give is the time slices so we know what to sample
@@ -438,7 +519,7 @@ OPEC_Service.prototype.calculateEstimatedEndTime = function(){
 			
 			_this._estimationStatus = {
 				state: 'success',
-				message: 'Finished estimated succesfully',
+				message: 'Finished estimated successfully',
 				endTime : _this._estimatedEndTime,
 				timePerSlice: timePerSlice /  1000
 			}
@@ -461,7 +542,7 @@ OPEC_Service.prototype.percentage = function(){
 	if( this._series_ready )
 		return 100;
 	
-	// Try to calcualte a percent based on time (if est is avaliable)
+	// Try to calculate a percent based on time (if est is available)
 	var est = this.estimatedEndTime();
 	if( est )
 		return ( ( new Date()  - this._startTime) / (est - this._startTime) ) * 100;

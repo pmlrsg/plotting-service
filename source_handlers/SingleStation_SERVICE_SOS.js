@@ -519,6 +519,11 @@ SOS_Service.prototype.percentage = function(){
 }
 
 
+SOS_Service.prototype.addResourcesToArchive = function( resources, archive, callback){
+	callback();
+};
+
+
 /**
 * Tries to return the estimated completion time
 *	- Returns the actaul end time if the download finished

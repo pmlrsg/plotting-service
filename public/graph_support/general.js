@@ -481,13 +481,30 @@ var graphController = {
   downloadPopup: function(){ 
     if( this.downloadInit == false ){
       this.downloadInit = true;
+
+      var downloadTypes = graphController.request.plot.downloadTypes;
+      // Add the download checkbox options
+      if( ! $.isArray( downloadTypes ) )
+        downloadTypes = [
+         { key: 'svg', label: 'SVG' },
+         { key: 'png', label: 'PNG' },
+        ];
+        
+      downloadTypes.forEach(function( type ){
+        $('#download-formats').append( Templates.get('download-type')( type ) );
+      });
+
+      //Enable buttons to close the popup
       $('.js-close-download-popup').click(function( e ){
         if( e.target != this )
           return;
+
         $('.js-download-popup').hide();
       });
       $('.js-download').click( this.download.bind(this) );
     };
+
+    //Show the popup
     $('.js-download-popup').show();
   },
 
