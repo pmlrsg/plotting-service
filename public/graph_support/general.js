@@ -539,7 +539,7 @@ var graphController = {
    * @param  {Array} data The array of data from the graph server
    */
   initChart: function( data ){
-
+    var _this = this;
     this.groups = data.groups;
     this.request = data.request;
     this.series = data.series;
@@ -555,7 +555,9 @@ var graphController = {
     if( this.request.style && this.request.style.logos )
       addLogos( this.request.style.logos );
 
-    // 
+    if( Settings.get('brushExtent') )
+      this.chart.brushExtent( Settings.get('brushExtent') );
+    
     this.displaySeries();
 
     this.setupBounds();
@@ -573,8 +575,18 @@ var graphController = {
     });
 
     this.updateViewSeries();
-    //
-    //  addTitle( request.plot.title );
+
+
+    // Track brush changes and store them in the header
+    this.chart.on( 'brush', function(){
+      var extent = _this.chart.brushExtent();
+      if( $.isArray( extent ) )
+        Settings.set( 'brushExtent', _this.chart.brushExtent().map(Math.round) );
+      else
+        Settings.unset( 'brushExtent' );
+    });
+
+    this.chart.update();
   }
 };
 
