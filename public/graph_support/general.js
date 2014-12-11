@@ -1,32 +1,3 @@
-(function ($) {
-  $.deserialize = function (str, options) {
-      var pairs = str.split(/&amp;|&/i),
-          h = {},
-          options = options || {};
-      for(var i = 0; i < pairs.length; i++) {
-          var kv = pairs[i].split('=');
-          kv[0] = decodeURIComponent(kv[0]);
-          if(!options.except || options.except.indexOf(kv[0]) == -1) {
-              if((/^\w+\[\w+\]$/).test(kv[0])) {
-                  var matches = kv[0].match(/^(\w+)\[(\w+)\]$/);
-                  if(typeof h[matches[1]] === 'undefined') {
-                      h[matches[1]] = {};
-                  }
-                  h[matches[1]][matches[2]] = decodeURIComponent(kv[1]);
-              } else {
-                  h[kv[0]] = decodeURIComponent(kv[1]);
-              }
-          }
-      }
-      return h;
-  };
-
-  $.fn.deserialize = function (options) {
-      return $.deserialize($(this).serialize(), options);
-  };
-})(jQuery);
-
-
 
 // Generates unqiue ideas for internal use
 var uuid = (function(){
@@ -61,22 +32,47 @@ Templates = {
   }
 };
 
+function deserialize( searchString ){
+  var o = {};
+
+  ('&' + searchString)
+    .replace(
+        /&([^\[=&]+)(\[[^\]]*\])?(?:=([^&]*))?/g,
+        function (m, $1, $2, $3) {
+            if ($2) {
+                if (!o[$1]) o[$1] = [];
+                o[$1].push($3);
+            } else o[$1] = $3;
+        }
+    );
+  return o;
+}
 
 // Place to store the settings in the hash header
 Settings = {
+  // Place to store the settings
   values : {},
   load: function(){
     var hash = window.location.hash;
     if( hash.substr( 0, 1 ) != "#" )
       return false;
+
+    this.values = deserialize( hash.substr(1) );
   },
+  // Get a setting by key
   get: function( key ){
-    return values[key];
+    return this.values[key];
   },
+  // Set a setting by key and update the hash
   set: function( key, value ){
-    values[key] = value
-    return values[key];
+    this.values[key] = value;
+    window.location.hash = decodeURI($.param( this.values ));
+    return this.values[key];
   },
+  unset: function( key ){
+    delete this.values[key];
+    window.location.hash = decodeURI($.param( this.values ));
+  }
 };
 
 
@@ -219,15 +215,13 @@ var graphController = {
    * being passed into NVD3. After updating those it updates the chart.
    */
   updateViewSeries: function(){
-    var seriesIdsToShow = $('[name="selected_series[]"]:checked')
-        .toArray()
-        .map(function(ele){ return $(ele).val(); });
+    var seriesIdsToShow = Settings.get('series-ids-shown');
 
     var seriesToShow = this.originalSeries.filter(function(series){
       return seriesIdsToShow.indexOf( series.key ) > -1;
     });
 
-    if( $('#dont-join-data-gaps').prop('checked') )
+    if( Settings.get('dont-join-data-gaps') == "true" )
       seriesToShow = this.splitAllSeriesOnGap( seriesToShow );
 
     var args = [ 0, this.graphSeries.length ].concat( seriesToShow );
@@ -261,7 +255,31 @@ var graphController = {
     });
     $('#series').html( html );
 
-    $('[name="selected_series[]"]').change( this.updateViewSeries.bind( this ) );
+    // Set the series to be shown in the header if not set
+    if( $.isArray( Settings.get( 'series-ids-shown' ) ) ){
+      // Set all to false
+      $('[name="selected_series[]"]:checked').prop( 'checked', false );
+
+      // Enable just the ones ask for in the header
+      Settings.get( 'series-ids-shown' ).forEach(function( id ){
+        $('[id="' + id + '"]').prop( 'checked', true );
+      });
+    }else{
+      //idsToShown header has not been set to create it
+      var idsShown = $('[name="selected_series[]"]:checked').map( function(){
+          return $(this).val();
+        } ).toArray();
+      Settings.set( 'series-ids-shown', idsShown );
+    }
+
+    var _this = this;
+    $('[name="selected_series[]"]').change( function(){
+        var idsShown = $('[name="selected_series[]"]:checked').map( function(){
+            return $(this).val();
+          } ).toArray();
+        Settings.set( 'series-ids-shown', idsShown );
+        _this.updateViewSeries()
+    });
 
     //Series meta data toggle
     $('body').on('click', '.js-toggle-meta-information', function(e){
@@ -287,23 +305,29 @@ var graphController = {
     this.chart.on("update", updateyAxisLockValues );
     this.chart.on("brush", updateyAxisLockValues );
 
+    $('.bounds-input-holder input').each(function(){
+      var inputKey = $(this).attr('id');
+      if( Settings.get( inputKey ) )
+        $(this).val( Settings.get( inputKey ) ).addClass('active');
+    });
+    // Apply updates from setup
+    updateValueRange();
 
     function updateValueRange(){
       var y1Domain = [ 'auto', 'auto' ];
       var y2Domain = [ 'auto', 'auto' ];
 
-      if( $('#left-y-min').val() !== "" )
-          y1Domain[0] = $('#left-y-min').val();
+      if( Settings.get('left-y-min') )
+          y1Domain[0] = Settings.get('left-y-min');
 
-      if( $('#left-y-max').val() !== "" )
-          y1Domain[1] = $('#left-y-max').val();
+      if( Settings.get('left-y-max') )
+          y1Domain[1] = Settings.get('left-y-max');
 
+      if( Settings.get('right-y-min') )
+          y2Domain[0] = Settings.get('right-y-min');
 
-      if( $('#right-y-min').val() !== "" )
-          y2Domain[0] = $('#right-y-min').val();
-
-      if( $('#right-y-max').val() !== "" )
-          y2Domain[1] = $('#right-y-max').val();
+      if( Settings.get('right-y-max') )
+          y2Domain[1] = Settings.get('right-y-max');
 
       graphController.chart.y1Domain( y1Domain );
       graphController.chart.y2Domain( y2Domain );
@@ -311,6 +335,11 @@ var graphController = {
     }
 
     $('.bounds-input-holder input').on('keyup change',function(){
+      if( $(this).val() == "" )
+        Settings.unset( $(this).attr('id') );
+      else  
+        Settings.set( $(this).attr('id'), $(this).val() );
+
       updateValueRange();
       if( $(this).val() != "" )
         $(this).addClass('active');
@@ -428,11 +457,16 @@ var graphController = {
     this.svg(startDownload);
 
     function startDownload( svg ){
+      var inputs = [];
+
+      inputs.push(   );
 
       $('<form>')
         .attr('method', 'post')
-        .attr('action', root + "/svg-to/" + format )
+        .attr('action', root + "/plot/" + plotId + '/download' )
         .append( $('<input>').attr('type','hidden').attr('name','svg').val( svg ) )
+        .append( $('#download-content input[type=checkbox]:checked').clone() )
+        .hide()
         .appendTo('body')
         .submit();
     };
@@ -440,8 +474,40 @@ var graphController = {
   },
   error: function( niceErrorMessage, complexLog ){
     console.log( complexLog );
-    alert( niceErrorMessage );
+    $('body').html( niceErrorMessage );
   },
+
+  downloadInit: false,
+  downloadPopup: function(){ 
+    if( this.downloadInit == false ){
+      this.downloadInit = true;
+
+      var downloadTypes = graphController.request.plot.downloadTypes;
+      // Add the download checkbox options
+      if( ! $.isArray( downloadTypes ) )
+        downloadTypes = [
+         { key: 'svg', label: 'SVG' },
+         { key: 'png', label: 'PNG' },
+        ];
+        
+      downloadTypes.forEach(function( type ){
+        $('#download-formats').append( Templates.get('download-type')( type ) );
+      });
+
+      //Enable buttons to close the popup
+      $('.js-close-download-popup').click(function( e ){
+        if( e.target != this )
+          return;
+
+        $('.js-download-popup').hide();
+      });
+      $('.js-download').click( this.download.bind(this) );
+    };
+
+    //Show the popup
+    $('.js-download-popup').show();
+  },
+
   /**
    * Starts of the process of building graph.
    * Downloads the graph data and then calls initChart
@@ -454,10 +520,10 @@ var graphController = {
     var _this = this;
     $.ajax({
       dataType: "json",
-      url: root + "/job/" + graphId + "/data",
+      url: root + "/job/" + plotId + "/data",
       success: function( data ){
-          _this.initChart( data );
         try{
+          _this.initChart( data );
         }catch(e){
           _this.error( "Could not download the data.", e );
         };
@@ -473,7 +539,7 @@ var graphController = {
    * @param  {Array} data The array of data from the graph server
    */
   initChart: function( data ){
-
+    var _this = this;
     this.groups = data.groups;
     this.request = data.request;
     this.series = data.series;
@@ -489,12 +555,19 @@ var graphController = {
     if( this.request.style && this.request.style.logos )
       addLogos( this.request.style.logos );
 
-    // 
+    if( Settings.get('brushExtent') )
+      this.chart.brushExtent( Settings.get('brushExtent') );
+    
     this.displaySeries();
 
     this.setupBounds();
 
-    $('#dont-join-data-gaps').change( graphController.updateViewSeries.bind( graphController ) );
+    $('#dont-join-data-gaps').change( function(){
+      Settings.set('dont-join-data-gaps' , $(this).prop('checked').toString());
+      graphController.updateViewSeries()
+    } );
+    if( Settings.get('dont-join-data-gaps') == "true")
+      $('#dont-join-data-gaps').prop( 'checked', true );
 
     //Set all series to show by default
     this.originalSeries.forEach(function( series ){
@@ -502,8 +575,18 @@ var graphController = {
     });
 
     this.updateViewSeries();
-    //
-    //  addTitle( request.plot.title );
+
+
+    // Track brush changes and store them in the header
+    this.chart.on( 'brush', function(){
+      var extent = _this.chart.brushExtent();
+      if( $.isArray( extent ) )
+        Settings.set( 'brushExtent', _this.chart.brushExtent().map(Math.round) );
+      else
+        Settings.unset( 'brushExtent' );
+    });
+
+    this.chart.update();
   }
 };
 

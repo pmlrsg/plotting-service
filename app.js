@@ -2,6 +2,7 @@
 require( __dirname + '/app/config/config.js');
 
 GLOBAL.root = __dirname;
+GLOBAL.loopback = 'http://localhost:' + config.port;
 
 // Standard librarys
 var express = require('express');

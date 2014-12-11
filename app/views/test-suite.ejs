@@ -5,7 +5,7 @@
 	 <meta charset="utf-8">
 	 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-	 <title>D3 Server-side Demo</title>
+	 <title>Test Zone</title>
 	 <style type="text/css">
 	body {
 		 background-color: #f5f5f5;
@@ -46,12 +46,6 @@
 			<h3>Job: {{ job_id }}</h3>
 			<h3>Interactive:</h3>
 				<iframe src="job/{{job_id}}/interactive" style="width: 100%; height: 500px;"></iframe>
-			<h3>SVG:</h3>
-				<object  data="/job/{{job_id}}/svg" type="image/svg+xml" width="611" height="320" >
-				</object>
-			<h3>PNG:</h3>
-				<img src="/job/{{job_id}}/png" />
-			
 			<h3>Request:</h3>
 			<pre>{{ request }}</pre>
 	</script>
@@ -116,7 +110,7 @@
 		{
 				"plot" : {
 					"type" : "timeseries",
-					"title" : "A Test Timeseries - Very Long Wait",
+					"title" : "OPEC Service - Timeseries - Very Long Wait",
 					"style" : "basic",
 					"data" : {
 						"series" : [
@@ -163,96 +157,15 @@
 					}
 				}
 			},
-
-		{
-				"plot" : {
-					"type" : "timeseries",
-					"title" : "A Test Timeseries - Multiple Series - Line Bar",
-					"style" : "basic",
-					"data" : {
-						"series" : [
-							{
-								"handler" : "OPEC_SERVICE_WCS",
-								"data_source" : {
-									"coverage"  : "T",
-									"t_bounds"  : ["2010-06-06T19:43:37","2013-08-27T19:43:37"],
-									"geo_bounds": [],
-									"depth": "-1.0",
-									
-									"threddsUrl"  : "https://rsg.pml.ac.uk/thredds/wcs/PML_GEN_M?",
-									"metaCacheUrl" : 'http://portaldev.marineopec.eu/cache/layers/pml_monthly_T.json',
-									"middlewareUrl" : 'http://portaldev.marineopec.eu/service/wcs'
-								},
-								"sub_series" : [
-									{
-										"label" : "Oxygen Min",
-										"key"  : "min",
-										"yAxis": 1,
-										"type": "line",
-									},
-									{
-										"label" : "Oxygen Max",
-										"key"  : "max",
-										"yAxis": 2,
-										"type": "bar",
-									},
-								]
-							}
-						]
-					},
-					"xAxis" : {
-						"label" : "Time - ISO blah",
-						"ticks" : "auto",
-						"weight" : "auto",
-						"tickFormat" : "%x"
-					}, 
-					"y1Axis" : {
-						"scale" : "log", //( linear | log_scale | ordinal | time)
-						"label" : "Oxygen mg",
-						"ticks" : "auto",
-						"weight" : "auto",
-						"tickFormat" : ",.2f"
-					},
-					"y2Axis" : {
-						"scale" : "linear",
-						"label" : "Rrs_412 kg",
-						"ticks" : "auto",
-						"wieght" : "auto",
-						"tickFormat" : ",.2f"
-					}
-				}
-			},
 			{
 				"plot" : {
 					"type" : "timeseries",
-					"title" : "A Test Timeseries - Multiple Series - Line Line",
+					"title" : "OPEC Service - Timeseries",
 					"style" : "basic",
 					"data" : {
 						"series" : [
-						/*
 							{
-								"handler" : "OPEC_SERVICE_WCS",
-								"y-axis" : 1,
-								"data_source" : {
-									"coverage"  : "T",
-									"t_bounds"  : ["2000-06-06T19:43:37","2013-08-27T19:43:37"],
-									"geo_bounds": [],
-									//"depth": "-1.0",
-									
-									"threddsUrl"  : "https://rsg.pml.ac.uk/thredds/wcs/PML_GEN_M?",
-									"metaCacheUrl" : 'http://portaldev.marineopec.eu/cache/layers/pml_monthly_T.json',
-									"middlewareUrl" : 'http://portaldev.marineopec.eu/service/wcs'
-								},
-								"sub_series" : [ 
-									{
-										"label" : "Oxygen Mean",
-										"key"  : "mean",
-										"yAxis": 2,
-										"type": "line",
-									}
-								]
-							},
-							{
+								"yAxis": 1,
 								"handler" : "OPEC_SERVICE_WCS",
 								"data_source" : {
 									"coverage"  : "T",
@@ -263,23 +176,8 @@
 									"threddsUrl"  : "https://rsg.pml.ac.uk/thredds/wcs/PML_GEN_M?",
 									"metaCacheUrl" : 'http://portaldev.marineopec.eu/cache/layers/pml_monthly_T.json',
 									"middlewareUrl" : 'http://portaldev.marineopec.eu/service/wcs'
-								},
-								"sub_series" : [
-									{
-										"label" : "Oxygen Min",
-										"key"  : "min",
-										"yAxis": 1,
-										"type": "line",
-									},
-									{
-										"label" : "Oxygen Max",
-										"key"  : "max",
-										"yAxis": 1,
-										"type": "line",
-									},
-								]
+								}
 							},
-							*/
 							{
 								"handler" : "OPEC_SERVICE_WCS",
 								"yAxis": 1,

@@ -11,6 +11,7 @@ var dns = require('dns');
 var url = require('url');
 var clone = require('clone');
 var xml2js = require('xml2js');
+var uid = require('uid');
 
 
 Array.prototype.first = function(){
@@ -173,6 +174,7 @@ SOS_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 		//Make a new series
 		var newSeries = {
 			label : subSeries.label, //graph name
+			key: uid(),
 			type : subSeries.type, //graph type (line|bar|etc...)
 			yAxis : subSeries.yAxis, //graph axis
 			values: [], // place to store the points
@@ -515,6 +517,11 @@ SOS_Service.prototype.percentage = function(){
 	// Else return 0%
 	return 0;
 }
+
+
+SOS_Service.prototype.addResourcesToArchive = function( resources, archive, callback){
+	callback();
+};
 
 
 /**
