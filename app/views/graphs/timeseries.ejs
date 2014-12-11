@@ -237,7 +237,19 @@
 			.fa-close{
 				cursor: pointer;
 			}
+.trigger-download-button{
+margin-top: 20px;
+width: 100%;
+padding: 7px;
+font-size: 18px;
+border: none;
+border-radius: 3px;
+background-color: #A19D63;
+color: white;
+}
+
 		</style>
+
 		<script>
 
 			var container = '#chart';
@@ -338,7 +350,7 @@
 				</div>
 
 				<div>
-					<button onclick="graphController.downloadPopup();">Download</button>
+					<button onclick="graphController.downloadPopup();" class="trigger-download-button">Sale & Download</button>
 				</div>
 			</div>
 			<div id="logos"></div>
