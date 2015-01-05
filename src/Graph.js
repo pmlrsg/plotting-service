@@ -7,6 +7,7 @@ var Lateral = require( 'lateral' ).Lateral;
 var Sequence = exports.Sequence || require('sequence').Sequence;
 var Domain = require('domain');
 var Phantom = require('phantom');
+var request = require('request');
 
 
 function phantomPage( callback ){
@@ -159,18 +160,6 @@ Graph.prototype.json = function(){
 }
 
 
-/**
-* Returns the data as a CSV
-*/
-Graph.prototype.csv = function( sourceHandlerId ){
-	if( this._sourceHandlers.length <= sourceHandlerId )
-		throw new Error( "Source handler at index " + sourceHandlerId + " does not exist." );
-
-	var handler = this._sourceHandlers[ sourceHandlerId ];
-	return handler.csv()
-}
-
-
 
 ////////////////////////////////////////////////
 ////////////////// Totally not needed bellow
@@ -226,10 +215,64 @@ Graph.prototype.noninteractiveHtml = function( callback ){
 * Includes tags html, body, head, etc....
 *  - Caches results
 *
+* @param {int} width The width of the svg
+* @param {int} height The height of the svg
+* @param {String} OPTIONAL state The state to us to produce the svg
+*                          		State is currently not used but will
+*                          		be in the future
 * @param {Function} callback The callback to return the SVG/XML
 */
-Graph.prototype.svg = function( callback ){
-	callback( 'deving....' );
+Graph.prototype.svg = function( width, height, state, callback ){
+	switch( this.type() ){
+		case "hovmollerLat":
+		case "hovmollerLon":
+			var draw = require( root + '/lib/drawHovmoller' );
+			return draw( this.type(), this.json().series, width, height, callback );
+		default:
+			callback( new Error( "Could not produce SVG for plot type '"+ this.type() +"'" ) );
+
+	}
+}
+
+
+/**
+* Produces the PNG of the graph and send it back in a callback.
+*
+* @param {int} width The width of the png
+* @param {int} height The height of the png
+* @param {String} OPTIONAL state The state to us to produce the png
+* @param {Function} callback The callback to return the PNG buffer
+*/
+Graph.prototype.png = function( width, height, state, callback ){
+	
+   // Paramaters for the request
+   var paramaters = {
+      method: 'POST',
+      url: loopback + '/svg-to/png',
+      form: { svg: null },
+      encoding: null // tells request to return a Buffer as body
+   };
+
+   // Callback to the add the png to the archive
+   var pngCallback = function( err, httpResponse, body ){
+      if( err )
+      	callback( err );
+      else
+	      callback( null, body );
+   };
+
+   // Callback with thew svg
+   var svgCallback = function( err, svg ){
+      if( err )
+      	return callback( err );
+      
+      // Convert the SVG into a png
+      paramaters.form.svg = svg;
+   	request( paramaters, pngCallback );
+   };
+
+   this.svg( width, height, state, svgCallback );
+
 }
 
 /**

@@ -130,7 +130,28 @@ OPEC_Service.prototype.makeSeries = function(){
 OPEC_Service.prototype.seriesFormatters = {};
 
 /**
-* Makes the series' in the timeline formmat
+* Makes the series' in the hovmoller latitude  format
+* Uses the downloaded data.
+*/
+OPEC_Service.prototype.seriesFormatters['hovmollerlat'] = hovmoller = function(){
+
+	this._formatedSeries = [];
+	this._formatedGroups = [];
+
+	this._formatedSeries.push({
+		values: this._data,
+      meta: this._series.meta,
+      key: uid(),
+		label : this._series.label, //graph name
+
+	});
+};
+
+
+OPEC_Service.prototype.seriesFormatters['hovmollerlon'] = hovmoller;
+
+/**
+* Makes the series' in the time line format
 * Uses the downloaded data.
 * 
 * Takes the download data and loops over the date points pulling out the need values
@@ -200,6 +221,15 @@ OPEC_Service.prototype.buildSourceUrl = function( dataSource ){
 	queryData.coverage = dataSource.coverage;
 	queryData.type = this._type;
 	
+	if( dataSource.graphXAxis )
+		queryData.graphXAxis = dataSource.graphXAxis;
+	
+	if( dataSource.graphYAxis )
+		queryData.graphYAxis = dataSource.graphYAxis;
+	
+	if( dataSource.graphZAxis )
+		queryData.graphZAxis = dataSource.graphZAxis;
+
 	queryData.time = dataSource.t_bounds.map(function( dateString ){
 		var date = new Date( dateString );
 		return date.toISOString();

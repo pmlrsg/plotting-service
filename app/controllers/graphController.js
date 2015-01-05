@@ -71,16 +71,25 @@ graphController.show = function( req, res, next ){
    d.run(function(){
       switch( returnType ){
          case "interactive":
+            // Render the correct graph type
             res.render( 'graphs/' + graph.type(),{
                plotId: job.id()
-            } );
+            });
             break;
          case "data":
             res.json( graph.json() );
             break;
-         case "csv":
-            var sourceHandlerId = req.param('sourceHandlerId');
-            res.send( graph.csv( sourceHandlerId ) );
+         case "png":
+            var width = req.param( 'width' );
+            var height = req.param( 'height' );
+            var state = req.param( 'state' );
+            graph.png( width, height, state, function( err, pngBuffer ){
+               if( err )
+                  return next( err );
+               
+               res.setHeader('Content-Type', 'image/png' );
+               res.send( pngBuffer );
+            });
             break;
 
       }

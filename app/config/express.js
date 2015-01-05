@@ -7,6 +7,7 @@ module.exports = function( app ){
    app.set('view engine', 'ejs');
    app.set('trust proxy', ['loopback']);
 
+   app.use(express.bodyParser({limit: '512mb'}));
 
    // All overriding over content-type so
    // IE8 can set content type to JSON
