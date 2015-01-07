@@ -17,6 +17,7 @@
       <style>
          body{
             margin: 0px;
+            overflow: hidden;
          }
 
          #main_img{
@@ -24,11 +25,16 @@
             text-align: center;
          }
 
-         img.loading{
+         .loading{
             transform: translate(-50%, -50%);
             position: absolute;
             top: 50%;
             left: 50%;
+            background-color: rgba(0, 0, 0, 0.63);
+            padding: 10px;
+            text-align: center;
+            color: white;
+            font-family: Verdana;
          }
          #main_img img{
             max-width: 100%;
@@ -49,6 +55,9 @@
       <div id="main_img">
 
       </div>
-      <img class="loading" src="http://pmpc1310.npm.ac.uk/plotting/loading.gif">
+      <div class="loading">
+         <img  src="http://pmpc1310.npm.ac.uk/plotting/loading.gif"><br>
+         <span>Generating...</span>
+      </div>
    </body>
 </html>

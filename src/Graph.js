@@ -227,7 +227,7 @@ Graph.prototype.svg = function( width, height, state, callback ){
 		case "hovmollerLat":
 		case "hovmollerLon":
 			var draw = require( root + '/lib/drawHovmoller' );
-			return draw( this.type(), this.json().series, width, height, callback );
+			return draw.svg( this.type(), this.json().series, width, height, callback );
 		default:
 			callback( new Error( "Could not produce SVG for plot type '"+ this.type() +"'" ) );
 
@@ -244,34 +244,9 @@ Graph.prototype.svg = function( width, height, state, callback ){
 * @param {Function} callback The callback to return the PNG buffer
 */
 Graph.prototype.png = function( width, height, state, callback ){
-	
-   // Paramaters for the request
-   var paramaters = {
-      method: 'POST',
-      url: loopback + '/svg-to/png',
-      form: { svg: null },
-      encoding: null // tells request to return a Buffer as body
-   };
 
-   // Callback to the add the png to the archive
-   var pngCallback = function( err, httpResponse, body ){
-      if( err )
-      	callback( err );
-      else
-	      callback( null, body );
-   };
-
-   // Callback with thew svg
-   var svgCallback = function( err, svg ){
-      if( err )
-      	return callback( err );
-      
-      // Convert the SVG into a png
-      paramaters.form.svg = svg;
-   	request( paramaters, pngCallback );
-   };
-
-   this.svg( width, height, state, svgCallback );
+	var draw = require( root + '/lib/drawHovmoller' );
+	draw.png( this.type(), this.json().series, width, height, callback );
 
 }
 
