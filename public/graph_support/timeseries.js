@@ -160,7 +160,7 @@ function makeGraph( series, request ) {
 		.call(chart);
 
    
-   if( graphController.showContextBrushByDefault() ){
+   if( timeseriesController.showContextBrushByDefault() ){
       var min = Infinity;
       var max = 0;
       series.forEach(function( series ){
@@ -248,7 +248,7 @@ function addLogos( logos ){
 };
 
 
-var graphController = {
+var timeseriesController = $.extend({}, graphController, {
   showContextBrushByDefault: function(){
     return true;
   },
@@ -345,6 +345,12 @@ var graphController = {
     [].splice.apply( this.graphSeries, args );
     this.chart.update();
   },
+  /**
+   * Creates the list of series/series groups that go
+   * into the side bar. This creates the html from the 
+   * this.groups and this.series arrays and inserts the 
+   * html into the sidebar
+   */
   displaySeries: function(){
     var groups = this.groups;
     var groupKeys = groups.map(function( group ){ return group.groupKey; });
@@ -408,10 +414,20 @@ var graphController = {
 
   },
   setupBounds: function(){
+    /**
+     * Helper function to round numbers to 2dp 
+     * @param  number        Number to rounder
+     * @return Number        Rounded number
+     */
     function roundsTo2(num){ return Math.round( num * 100 ) / 100; };
+
+    /**
+     * Helper function to update the placeholder vales in the y axis locks
+     * This function runs every time the graph is updated
+     */
     function updateyAxisLockValues(){
-      var leftDomain = graphController.chart.y1Axis.domain();
-      var rightDomain = graphController.chart.y2Axis.domain();
+      var leftDomain = timeseriesController.chart.y1Axis.domain();
+      var rightDomain = timeseriesController.chart.y2Axis.domain();
 
       $('#left-y-min').attr( 'placeholder', roundsTo2( leftDomain[0]) );
       $('#left-y-max').attr( 'placeholder', roundsTo2( leftDomain[1]) );
@@ -419,17 +435,26 @@ var graphController = {
       $('#right-y-min').attr( 'placeholder', roundsTo2( rightDomain[0]) );
       $('#right-y-max').attr( 'placeholder', roundsTo2( rightDomain[1]) );
     }
+    /**
+     * Register function to run on graph update and brush movement
+     */
     this.chart.on("update", updateyAxisLockValues );
     this.chart.on("brush.axis_lock", updateyAxisLockValues );
 
+    // Return Y Axis lock values into the inputs if they
+    // where in the header
     $('.bounds-input-holder input').each(function(){
       var inputKey = $(this).attr('id');
       if( Settings.get( inputKey ) )
         $(this).val( Settings.get( inputKey ) ).addClass('active');
     });
-    // Apply updates from setup
+
     updateValueRange();
 
+    /**
+     * Helper function that takes the Y Axis lock values from the settings
+     * and applys them to the Y Axis domains
+     */
     function updateValueRange(){
       var y1Domain = [ 'auto', 'auto' ];
       var y2Domain = [ 'auto', 'auto' ];
@@ -446,11 +471,13 @@ var graphController = {
       if( Settings.get('right-y-max') )
           y2Domain[1] = Settings.get('right-y-max');
 
-      graphController.chart.y1Domain( y1Domain );
-      graphController.chart.y2Domain( y2Domain );
-      graphController.chart.update();
+      timeseriesController.chart.y1Domain( y1Domain );
+      timeseriesController.chart.y2Domain( y2Domain );
+      timeseriesController.chart.update();
     }
 
+    // When the users edits a Y Axis Lock input update the value
+    // in the settings module and update the graph domains
     $('.bounds-input-holder input').on('keyup change',function(){
       if( $(this).val() == "" )
         Settings.unset( $(this).attr('id') );
@@ -464,12 +491,15 @@ var graphController = {
         $(this).removeClass('active');
     });
 
+    // When someone focuses on an empty Y Axis Lock input
+    // populate it with the current place holder
     $('.bounds-input-holder input').focus(function(){
       if( $( this ).val() == "" )
         $(this).val( $(this).attr('placeholder') ).change();
     });
 
-
+    // When lock icon in the Y Axis Lock input is click
+    // toggle the input value on and off
     $('.bounds-input-holder span').click(function(){
         var input = $(this).prev();
         if( input.val() == "" )
@@ -490,19 +520,20 @@ var graphController = {
    * 
    */
   prepareSeries: function(){
-
+    // Convert the string dates to timestamps
     this.series.forEach(function( singleSeries ){
       singleSeries.values.forEach(function( points ){
         points.x = new Date( points.x ).getTime();
       });
     });
 
-    //Add colours
+    //Add colors to series that dont have colors
     var color = d3.scale.category20();
     this.series.forEach(function( seriesSingle, i ){
       if( seriesSingle.color == void(0) )
         seriesSingle.color = color( i );
 
+      // Make sure the series has a label and key
       seriesSingle.label = seriesSingle.label || seriesSingle.key;
       seriesSingle.key = seriesSingle.key || uuid();
 
@@ -594,37 +625,6 @@ var graphController = {
     $('body').html( niceErrorMessage );
   },
 
-  downloadInit: false,
-  downloadPopup: function(){ 
-    if( this.downloadInit == false ){
-      this.downloadInit = true;
-
-      var downloadTypes = graphController.request.plot.downloadTypes;
-      // Add the download checkbox options
-      if( ! $.isArray( downloadTypes ) )
-        downloadTypes = [
-         { key: 'svg', label: 'SVG' },
-         { key: 'png', label: 'PNG' },
-        ];
-        
-      downloadTypes.forEach(function( type ){
-        $('#download-formats').append( Templates.get('download-type')( type ) );
-      });
-
-      //Enable buttons to close the popup
-      $('.js-close-download-popup').click(function( e ){
-        if( e.target != this )
-          return;
-
-        $('.js-download-popup').hide();
-      });
-      $('.js-download').click( this.download.bind(this) );
-    };
-
-    //Show the popup
-    $('.js-download-popup').show();
-  },
-
   /**
    * Starts of the process of building graph.
    * Downloads the graph data and then calls initChart
@@ -681,7 +681,7 @@ var graphController = {
 
     $('#join-data-gaps').change( function(){
       Settings.set('join-data-gaps' , $(this).prop('checked').toString());
-      graphController.updateViewSeries()
+      timeseriesController.updateViewSeries()
     } );
     if( Settings.get('join-data-gaps') == "true")
       $('#join-data-gaps').prop( 'checked', true );
@@ -711,6 +711,6 @@ var graphController = {
 // Once everything has loaded build the graph
 $(function(){
   Templates.init();
-  graphController.init();
+  timeseriesController.init();
   $('.tooltip').tooltipster()
 });
