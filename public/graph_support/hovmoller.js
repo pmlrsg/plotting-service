@@ -9,8 +9,8 @@ function reloadImage(){
 
    // Request params, pass the screen size
    var attrs = {
-      width: $(window).width(),
-      height: $(window).height(),
+      width: $('#main_img').width(),
+      height: $('#main_img').height(),
    };
 
    // Show the loading icon
@@ -45,6 +45,7 @@ function reloadImage(){
 // Resets/runs the percentage counter in the loading icon
 var loadingCounterTimeout;
 function resetLoadingCounter(){
+
    // Dont run the counter if we dont have generation time
    if( imageGenerationTime == -1 )
       return;
@@ -54,10 +55,10 @@ function resetLoadingCounter(){
    var startTime = new Date();
 
    loadingCounterTimeout = setInterval(function(){
-      // Work out percentage based on start time
+      // Work out percentage of progress based on start time
       var percent =  Math.round((((new Date) - startTime) / imageGenerationTime) * 100);
 
-      // If we hit 100% we dont need to keep doing this function
+      // If we hit 100% we dont need to keep doing this interval
       if( percent > 100 ){
          clearInterval( loadingCounterTimeout );
          percent = 100;
@@ -76,12 +77,13 @@ $(function(){
    $(window).resize(function(){
    
       $('.loading').show();
+      $('.loading span').text( 'Generating...' );
 
       // Werid hack to keep the image in the center...
       // Only works because of the CSS also on "#main_img img"
       $('#main_img').css({
-         width: $(window).width() - 1,
-         height: $(window).height() - 1,
+         width: $(window).width() - $('#sidebar').width(),
+         height: $(window).height(),
       });
       
       clearTimeout( reloadTimeout );
@@ -91,5 +93,8 @@ $(function(){
 
    });
    
-   reloadImage();
+   // Loading the tarting image
+   $(window).resize();
 });
+
+

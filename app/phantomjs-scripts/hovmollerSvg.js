@@ -28,6 +28,7 @@ var input = "";
 
 
 
+
 while(!system.stdin.atEnd()) {
     input += system.stdin.readLine();
 }
@@ -58,15 +59,21 @@ function go(){
    if ( ! page.injectJs( fs.workingDirectory + '/public/d3.js' )) 
       throw new Error( 'Could not load /public/d3.js' );
    
-   page.viewportSize = {
-     width: Number(width),
-     height: Number(height)
-   };
    // Inject the function and the parameters
-   var svg = page.evaluate(hovmoller, type, data, Number(width), Number(height) );
+   var options = {
+      type: type,
+      data : data,
+      overallWidth: Number(width),
+      overallHeight: Number(height),
+      flipAxis : false,
+      flipScalebar : false,
+      flipYAxis : false,
+   }
+   var svg = page.evaluate( hovmoller, options );
    var stop = (new Date);
    var randomTemp = '/tmp/' + start.getTime() + '-' + stop.getTime() + '.png';
    
+
    if( returnType == "svg" ){
       system.stdout.write( svg );
       phantom.exit(0);
@@ -81,23 +88,39 @@ function go(){
 };
 
 
-function hovmoller( type, data, overallWidth, overallHeight ) {
-   var title = "This is graph";
-   var flipAxis = false;
-   var trends = data[0];
-   var labelCount = 5;
+//function hovmoller( type, data, overallWidth, overallHeight ) {
+function hovmoller( option ) {
+   preLoad();
+
+   var type = option.type;
+   var overallWidth = option.overallWidth;
+   var overallHeight = option.overallHeight;
+   var flipAxis = option.flipAxis;
+   var flipScalebar = option.flipScalebar;
+   var flipYAxis = option.flipYAxis;
+   var data = option.data;
+   var trends = option.data[0];
+   var title = trends.label;
    
    // Set margin for the chart main group svg:g element
-   var margin = {top: 20, left: 120, right: 100, bottom: 65};
+   var margin = {top: 0, left: 0, right: 0, bottom: 0};
    
    // Use these defaults to make the overall needed area
    var overall_dims = {
       w : overallWidth,
       h : overallHeight
    };
-   var width = overallWidth -  ( margin.left + margin.right );
-   var height = overallHeight -  ( margin.top + margin.bottom );
+
+   function availableWidth(){
+      return overallWidth - ( margin.left + margin.right );
+   }
+
+   function availableHeight(){
+      return overallHeight -  ( margin.top + margin.bottom );
+   }
    
+   d3.select('body').style('style', 'padding:0px; margin:0px;')
+
    // Create svg element using overall_dims
    var svg = d3.select('body').append('div')
       .append('svg')
@@ -108,7 +131,7 @@ function hovmoller( type, data, overallWidth, overallHeight ) {
       .attr("viewBox", "0 0 " + overall_dims.w + " " + overall_dims.h );
    
    // Create main g element to contain graph transform to make 0,0 be inside the margins
-   var g = svg.append("g").attr("transform" ,"translate("+[margin.left,margin.top]+")");
+   var g = svg.append("g");
    
    
 
@@ -121,47 +144,67 @@ function hovmoller( type, data, overallWidth, overallHeight ) {
       xScale = null,
       yScale = null;
 
-   if( title != "" ){
-      
-   }
-   
 
-  if ( flipAxis == false ) {
-      // Create basic linear scale for the x, y and z axis.
-      zScale = d3.scale.linear();
-      xScale = d3.scale.ordinal();
-      yScale = d3.time.scale().range([0, height]);
+   // Add the title
+   if( title != "" ){
+      // How much room does the header need
+      var titleAreaHeight = 40;
+      margin.top += titleAreaHeight;
+      svg.append('text')
+         .text(title)
+         .attr("x", "50%")
+         .attr("y", titleAreaHeight/2 )
+         .style("font-size", "24px")
+         .style("text-anchor", "middle")
+         .attr("dominant-baseline", 'center');
+   }
+
+   //---------------------------
+   // Prepare the data!
+
+   // X and Y axis data
+   if ( flipAxis == false ) {
       
-      xScale.rangeRoundBands([0, width],  0);
-      xScale.domain(trends.values.map(function(d, i) { 
+      // How much room does the x and y axis need ?
+      margin.left += 110;
+      margin.bottom += 60;
+      
+      // Setup scales
+      zScale = d3.scale.linear();
+      xScale = d3.scale.linear();
+      yScale = d3.time.scale();
+      
+      xScale.domain(d3.extent(trends.values, function(d, i) { 
          return d[1];
       }));
       
       yScale.domain(d3.extent(trends.values, function(d) { 
          return parseDate(d[0]);
-      })); 
+      }));
    } else {
-      // Create basic linear scale for the x, y and z axis.
+      // How much room does the x and y axis need ?
+      margin.left += 100;
+      margin.bottom += 60;
+      
+      // Setup scales
       zScale = d3.scale.linear();
-      xScale = d3.time.scale().range([0, width]);
-      yScale = d3.scale.ordinal();
+      xScale = d3.time.scale();
+      yScale = d3.scale.linear();
       
       xScale.domain(d3.extent(trends.values, function(d) { 
          return parseDate(d[0]);
       }));
-      
-      yScale.rangeRoundBands([0, height],  0);
-      yScale.domain(trends.values.map(function(d, i) { 
+
+      yScale.domain(d3.extent(trends.values,function(d, i) { 
          return d[1];
       }));
    }
 
    
+   // Z axis stuff
    var scale = [];
    var colors = getColorPalette();
 
-
-   // Add the domain to the zScale - we re map the scale to 
    zScale.domain(
       d3.extent(trends.values, function(trend) {
          return trend[2];
@@ -170,158 +213,214 @@ function hovmoller( type, data, overallWidth, overallHeight ) {
 
    zScale.range([0, colors.length]);
 
+   
+   //--------------------------------------------
+   //              Add the legend
+   
+   //How much room does the legend needed
+   margin.right += 100;
+
+   var legendHeight = (overallHeight - margin.top) * 0.7;
+   var legendPadding = 10;
+   var legendInnerHeight = legendHeight - legendPadding*2;
+
+   // Container for the legend rainbow
+   var gradient = svg.append("defs").append("linearGradient")
+      .attr("id", "gradient")
+      .attr("y1", "0%")
+      .attr("y1", "0%")
+      .attr("y2", "100%")
+      .attr("x2", "0%")
+      .attr("spreadMethod", "pad");
+   
+   // Are what distances should <stop> be put in on the gradient bar
+   var stopAmounts = [0, 0.5,6.25, 12.5, 18.75, 25, 31.25, 37.5, 43.75, 50, 56.25, 62.5, 68.75, 75, 81.25, 87.5, 93.75, 99.5, 100 ];
+
+
+   // Add each colour to the legend at intervals
+   gradient
+      .selectAll('stop')
+      .data(stopAmounts)
+      .enter()
+      .append("stop")
+         .attr("offset", function(d,i){ return  d + '%'; })
+         .attr("stop-color", function(d,i){ return zcolorForPercentage( ( flipScalebar ? d : 100-d ) ); })
+         .attr("stop-opacity", 1);
+
+   
+   var legened = svg.append("g")
+      .attr('height', legendHeight )
+      .attr("class", "legend_group")
+      .attr("transform", "translate("+[ overallWidth - margin.right , margin.top ]+")")
+      
+   legened.append("rect")
+      .attr("class", "legend")
+      .attr("width", 20)
+      .attr("height", legendInnerHeight )
+      .attr("style", "fill: url('#gradient');")
+      .attr("transform", "translate(" + [ legendPadding, legendPadding ]+")");
+   
+   // 5 legend values
+   var legend_data = [0,25,50,75,100];
+   
+   // Display legend values
+   legened.selectAll(".labels")
+      .data(legend_data)
+      .enter()
+      .append("text")
+         .text(function(d,i) {
+            return Math.round( 1000 *  zvalueForPercentage(d) ) / 1000;
+         })
+         .attr("dominant-baseline", 'middle')
+         .attr("class", "labels")
+         .attr("transform", function(d,i) {
+            return "translate(" +[ 35,  legendPadding + legendInnerHeight * ( ( flipScalebar ? d : 100-d ) /100) ] + ")";
+         });
+
+
+   // Calculate range bands for because d3 wont!
+   // dateRangeBand
+
+   var uniqueXCount = d3.unique( trends.values, function(x){ return x[flipAxis?0:1] } );
+   var cellWidth = (availableWidth() / uniqueXCount) * 1.1;
+   if( cellWidth < 1 )
+      cellWidth = 1;
+
+   var uniqueYCount = d3.unique( trends.values, function(x){ return x[flipAxis?1:0] } );
+   var cellHeight = (availableHeight() / uniqueYCount) * 1.1;
+   if( cellHeight < 1 )
+      cellHeight = 1;
+
+   var range = [ 0 + (cellWidth/2), availableWidth() - (cellWidth/2) ];
+   xScale.range(range);
+
+   var range = [  availableHeight() - (cellHeight/2), 0 + (cellHeight/2) ];
+   if( flipYAxis )
+      range.reverse();
+   yScale.range(range);
+
    var xAxis,
       yAxis;
-   
-   var myTicks = function(scale) {
-      var values = scale.domain();
-      var ticks = [];
-      for (var i=0; i < values.length; i += Math.round(values.length/labelCount))  {
-         ticks.push(values[i]);
-      }
-      return ticks;
-   };
-   
    
 
    if( flipAxis == false ) {
       xAxis = d3.svg.axis()
          .scale(xScale) // set the range of the axis
-         .tickSize(10) // height of the ticks
+         .tickSize(1) // height of the ticks
          .orient("bottom")
-         .ticks(1)
-         .tickValues(myTicks(xScale))
          .tickFormat(function(d,i) { return d.toFixed(2); });
 
       yAxis = d3.svg.axis()
          .scale(yScale)
          .tickSize(1)
-         .orient("left");
+         .orient("left")
+         .tickFormat(d3.time.format("%d/%m/%Y"));
+
+      if( cellHeight > 40 ){
+         yAxis.tickValues(trends.values.map(function(d) { 
+            return parseDate(d[0]);
+         }));
+      }
 
    } else {     
       xAxis = d3.svg.axis()
          .scale(xScale)
          .tickSize(1)
-         .ticks(6)
-         .orient("bottom");
+         .orient("bottom")
+         .tickFormat(d3.time.format("%d/%m/%Y"));
       
+
+      if( cellWidth > 70 ){
+         xAxis.tickValues(trends.values.map(function(d) { 
+            return parseDate(d[0]);
+         }));
+      }
 
       yAxis = d3.svg.axis()
          .scale(yScale) // set the range of the axis
-         .tickSize(10) // height of the ticks
+         .tickSize(1) // height of the ticks
          .orient("left")
-         .ticks(8)
-         .tickValues(myTicks(yScale))
          .tickFormat(function(d,i) { return d.toFixed(2); });
+
    }
 
    
       
   // if ( type == 'hovmollerLon' ) {
-
-   var uniqueDatesCount = 0;
-   var datesFound = {};
-   for( var i = 0 ; trends.values.length > i; i++ ){
-      var currentDate = trends.values[i][0];
-      if( !( currentDate in datesFound) ){
-         uniqueDatesCount++;
-         datesFound[ currentDate ] = 1;
+      if( flipAxis == false ){
+         xAxisName = (type == 'hovmollerLon' ? "Longitude":"Latitude");
+         yAxisName = "Time";
+      }else{
+         xAxisName = "Time";
+         yAxisName = (type == 'hovmollerLon' ? "Longitude":"Latitude");
       }
-   }
-   delete datesFound;
 
-
-   var dateCellSpacing = (height / uniqueDatesCount) * 1.1  ;
-   if( dateCellSpacing < 1 )
-      dateCellSpacing = 1;
-
-   if( flipAxis == false){
-      var oldRage = yScale.range();
-      yScale.range( [  oldRage[0] + ( dateCellSpacing / 2 ) ,  oldRage[1] - ( dateCellSpacing / 2 ) ] );
-   }else{
-      var oldRage = xScale.range();
-      xScale.range( [  oldRage[0] + ( dateCellSpacing / 2 ) ,  oldRage[1] - ( dateCellSpacing / 2 ) ] );
-   }
-
-   if ( flipAxis == false ) {
       g.append("g")
         .attr("class", "xaxis")
-        .attr("transform", "translate(0," + (height- margin.top + 31) + ")")
+        .attr("transform", "translate(" + [ margin.left, overallHeight - margin.bottom ] + ")")
         .call(xAxis)
+        // X axis label
         .append("text")
-        .attr("y", 30)
-        .attr("x", 0 + (width/2) )
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text(type == 'hovmollerLon' ? "Longitude":"Latitude");
+        .attr("y", margin.bottom - 18)
+        .attr("x", 0 + (availableWidth()/2) )
+        .style("text-anchor", "middle")
+        .style("font-size", "18px")
+         .attr("dominant-baseline", 'hanging')
+        .text( xAxisName );
         
-      g.append("g").attr("class", "yaxis");   
-      g.select(".yaxis") 
+      g.append("g")
+         .attr("class", "yaxis")
+         .attr("transform", "translate(" + [ margin.left, margin.top ] + ")")
          .call(yAxis)
+         // y axis label
          .append("text")
          .attr("transform", "rotate(270)")
-         .attr("y", -80)
-         .attr("x", 0 - (height/2))
-         .attr("dy", ".71em")
-         .style("text-anchor", "end")
-         .text("Time");
+         .attr("y", -margin.left + 1)
+         .attr("x", 0 - (availableHeight()/2))
+         .attr("dominant-baseline", 'text-before-edge')
+         .style("font-size", "18px")
+         .style("text-anchor", "middle")
+         .text( yAxisName );
 
 
+   if ( flipAxis == false ) {
 
-
-      var rects = g.selectAll("rects")
+       var rects = g.append('g')
+         .attr("transform", "translate(" + [ margin.left, margin.top ] + ")")
+         .selectAll("rects")
          .data(trends.values)
          .enter()
             .append("rect")
-                .attr("x", function(d, i) { return  xScale( d[1] ); })
-                .attr("y", function(d, i) { return yScale( parseDate(d[0]) ) - ( dateCellSpacing / 2 ); })
+                .attr("x", function(d, i) { return  xScale( d[1] ) - ( cellWidth / 2 ); })
+                .attr("y", function(d, i) { return yScale( parseDate(d[0]) ) - ( cellHeight / 2 ); })
                 .attr("class", "graph-rect")
-                .attr("width", xScale.rangeBand())
-                .attr("height", dateCellSpacing )
-                .style("fill", function(d, i) { return colors[Math.round(zScale(d[2]))]; });  
+                .attr("width", cellWidth)
+                .attr("height", cellHeight )
+                .style("fill", function(d, i) { 
+                   return zcolorForValue( d[2] ); 
+                });
     
 
    } else {
-      g.append("g")
-        .attr("class", "xaxis")
-        .attr("transform", "translate(0," + (height- margin.top + 31) + ")")
-        .call(xAxis)
-        .append("text")
-        .attr("y", 30)
-        .attr("x", 0 + (width/2) )
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text("Time");
-        
-      g.append("g").attr("class", "yaxis");   
-      g.select(".yaxis") 
-         .call(yAxis)
-         .append("text")
-         .attr("transform", "rotate(270)")
-         .attr("y", -80)
-         .attr("x", 0 - (height/2))
-         .attr("dy", ".71em")
-         .style("text-anchor", "end")
-         .text( type == 'hovmollerLon' ? "Longitude":"Latitude" ); 
-
 
          
-      var rects = g.selectAll("rects")
+      var rects = g.append('g')
+         .attr("transform", "translate(" + [ margin.left, margin.top ] + ")").selectAll("rects")
          .data(trends.values)
          .enter()
             .append("rect")
-                .attr("x", function(d, i) { return  xScale( parseDate(d[0]) ) - ( dateCellSpacing / 2 );; })
+                .attr("x", function(d, i) { return  xScale( parseDate(d[0]) ) - ( cellWidth / 2 );; })
                 .attr("y", function(d, i) { return yScale( d[1] ); })
                 .attr("class", "graph-rect")
-                .attr("width", dateCellSpacing)
-                .attr("height", yScale.rangeBand())
+                .attr("width", cellWidth)
+                .attr("height", cellHeight)
                 .style("fill", function(d, i) { 
-                   return colorForZValue[ d[2] ]; 
+                   return zcolorForValue( d[2] ); 
                 });
    }
 
 
-   g.selectAll(".xaxis text").attr("transform", "translate("+width/365/2+",0)");
+   g.selectAll(".xaxis text").attr("transform", "translate("+availableWidth()/365/2+",0)");
 
    /**
     * Takes a z axis value and returns the color
@@ -353,48 +452,6 @@ function hovmoller( type, data, overallWidth, overallHeight ) {
       return zcolorForValue( zvalueForPercentage(percentage) );
    }
 
-   // Container for the legend
-   var gradient = svg.append("defs").append("linearGradient")
-      .attr("id", "gradient")
-      .attr("y1", "0%")
-      .attr("y1", "0%")
-      .attr("y2", "100%")
-      .attr("x2", "0%")
-      .attr("spreadMethod", "pad");
-   
-   // Are what distances should <stop> be put in on the gradient bar
-   var stopAmounts = [0, 0.5,6.25, 12.5, 18.75, 25, 31.25, 37.5, 43.75, 50, 56.25, 62.5, 68.75, 75, 81.25, 87.5, 93.75, 99.5, 100 ];
-
-   gradient
-      .selectAll('stop')
-      .data(stopAmounts)
-      .enter()
-      .append("stop")
-         .attr("offset", function(d,i){ return d+'%'; })
-         .attr("stop-color", function(d,i){ return zcolorForPercentage(d); })
-         .attr("stop-opacity", 1);
-
-   
-   svg.append("g").attr("class", "legend_group").append("rect").attr("class", "legend")
-      .attr("width", 20)
-      .attr("height", height/1.5)
-      .attr("style", "fill: url('#gradient');")
-      .attr("transform", "translate("+[width + margin.left + 10, height/10]+")");
-   
-   // 5 legend values
-   var legend_data = [0,25,50,75,100].map( zvalueForPercentage );
-   
-   // Display legend values
-   svg.select("g.legend_group").selectAll(".labels")
-      .data(legend_data).enter()
-      .append("text")
-         .text(function(d,i) {
-            return Math.ceil(1E3*d)/1E3;
-         })
-         .attr("class", "labels")
-         .attr("transform", function(d,i) {
-            return "translate(" + [width + margin.left + 35, ((height/6) * (i-0.5)) + height/5 ] + ")";
-         });
 
    var parent = d3.select(svg.node().parentNode);
    var svgXML = parent.html();
@@ -663,6 +720,23 @@ function hovmoller( type, data, overallWidth, overallHeight ) {
          "rgb(105,0,0)",
          "rgb(0,0,0)"
       ];
+   }
+
+   function preLoad(){
+      d3.unique = function( array, accessor ){
+         accessor = accessor || function(x){ return x };
+         var found = {};
+         var count = 0;
+         for( var i = 0; i < array.length; i++ ){
+            var value = accessor( array[i] );
+            if( ! ( value in found ) ){
+               count++;
+               found[value] = 1;
+            };
+         };
+         return count;
+      };
+
    }
 }
 
