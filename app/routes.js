@@ -20,7 +20,7 @@ function routes( app ){
    // URL parameters
    app.param('id', /^\d+$/); //job_id
    app.param('sourceHandlerId', /^\d+$/); //job_id
-   app.param('returnType', /^(data|interactive|png)$/); //Export types for graphs
+   app.param('returnType', /^(data|interactive|png|svg)$/); //Export types for graphs
 
 
    // Graphs

@@ -193,62 +193,8 @@ function makeGraph( series, request ) {
 
 
 
-/**
-* Sorts the logos disabled by height for style reasons
-*  - Will not work in IE8
-*/
-function reorderLogos(){
-  // Abort if getComputeStyle isnt allowed
-  try{
-     if( ! document.defaultView || ! document.defaultView.getComputedStyle )
-        return;
 
-     var logosElement = document.getElementById( 'logos' );
-     var logosElementWidth = $(logosElement).width();
-
-     var children = [];
-     for ( var i in logosElement.children){
-        if( logosElement.children[i] instanceof HTMLElement )
-           children.push( logosElement.children[i] );
-     }
-
-     children.sort(function( imgElementA, imgElementB ){
-        if( ( (logosElementWidth / 2) / imgElementA.naturalWidth ) * imgElementA.naturalHeight < 35 )
-          return 1;
-
-        var heightA = $( imgElementA )[0].naturalWidth;
-        var heightB = $( imgElementB )[0].naturalWidth;
-        return heightA > heightB ? 1: -1;
-     }).forEach(function( imgElement ){
-        logosElement.appendChild( imgElement );
-
-        if( ( (logosElementWidth / 2) / imgElement.naturalWidth ) * imgElement.naturalHeight < 35 )
-          var width = '100%';
-        else if( ( (logosElementWidth / 2) / imgElement.naturalWidth ) * imgElement.naturalHeight > 150 )
-          var width = '25%';
-        else
-          var width = '50%';
-
-        $(imgElement).css( 'width', width );
-     });
-  }catch(e){};
-
-  $('#controls').css({
-    'bottom': $('#logos').outerHeight() + 'px'
-  });
-}
-
-function addLogos( logos ){
-  logos.forEach(function( logo ){
-     var img = document.createElement( 'img' );
-     img.onload = reorderLogos;
-     img.src = logo;
-     document.getElementById( 'logos' ).appendChild( img );
-  });
-};
-
-
-var timeseriesController = $.extend({}, graphController, {
+var timeseriesController = $.extend( graphController, {
   showContextBrushByDefault: function(){
     return true;
   },
@@ -605,9 +551,6 @@ var timeseriesController = $.extend({}, graphController, {
     this.svg(startDownload);
 
     function startDownload( svg ){
-      var inputs = [];
-
-      inputs.push(   );
 
       $('<form>')
         .attr('method', 'post')
@@ -670,7 +613,7 @@ var timeseriesController = $.extend({}, graphController, {
       this.chart.title( this.request.plot.title );
 
     if( this.request.style && this.request.style.logos )
-      addLogos( this.request.style.logos );
+      this.addLogos( this.request.style.logos );
 
     if( Settings.get('brushExtent') )
       this.chart.brushExtent( Settings.get('brushExtent') );
@@ -705,7 +648,7 @@ var timeseriesController = $.extend({}, graphController, {
 
     this.chart.update();
   }
-};
+});
 
 
 // Once everything has loaded build the graph

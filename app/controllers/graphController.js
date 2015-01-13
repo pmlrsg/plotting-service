@@ -80,15 +80,21 @@ graphController.show = function( req, res, next ){
             res.json( graph.json() );
             break;
          case "png":
-            var width = req.param( 'width' );
-            var height = req.param( 'height' );
-            var state = req.param( 'state' );
-            graph.png( width, height, state, function( err, pngBuffer ){
+            graph.png( req.query, function( err, pngBuffer ){
                if( err )
                   return next( err );
                
                res.setHeader('Content-Type', 'image/png' );
                res.send( pngBuffer );
+            });
+            break;
+         case "svg":
+            graph.svg( req.query, function( err, svgBuffer ){
+               if( err )
+                  return next( err );
+               
+               res.setHeader('Content-Type', 'image/svg+xml' );
+               res.send( svgBuffer );
             });
             break;
 

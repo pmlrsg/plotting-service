@@ -271,7 +271,7 @@ OPEC_Service.prototype.sourceName = function(){
 }
 
 
-OPEC_Service.prototype.resourceCsv = function( archiver, folderName, callback){
+OPEC_Service.prototype.resourceCsvTimeseries = function( archiver, folderName, callback){
 	var titles = {
 		datetime: "Date",
 		min: "Min",
@@ -297,6 +297,37 @@ OPEC_Service.prototype.resourceCsv = function( archiver, folderName, callback){
 	archiver.append( csvStr, { name: folderName + 'data.csv' } );
 
 	callback();
+}
+
+
+OPEC_Service.prototype.resourceCsvHovmoller = function( archiver, folderName, callback){
+	var titles = {
+		0: "Date",
+		1: this._type == 'hovermollerLat' ? 'Latitude':'Longitude',
+		2: 'Value'
+	};
+	var rows = this._data;
+
+	rows.sort(function( a, b ){
+		return new Date( a[0] ) - new Date( b[0] ); 
+	});
+
+	var csvStr = csv( [titles].concat( rows ), {
+		headers: false
+	});
+
+	archiver.append( csvStr, { name: folderName + 'data.csv' } );
+
+	callback();
+}
+
+OPEC_Service.prototype.resourceCsv = function( archiver, folderName, callback){
+	if( this._type == 'timeseries' )
+		return this.resourceCsvTimeseries( archiver, folderName, callback );
+	if( this._type == 'hovmollerLat' || this._type == 'hovmollerLon' )
+		return this.resourceCsvHovmoller( archiver, folderName, callback );
+
+	return callback();
 }
 
 OPEC_Service.prototype.resourceMetaData = function( archiver, folderName, callback){

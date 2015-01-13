@@ -217,20 +217,20 @@ Graph.prototype.noninteractiveHtml = function( callback ){
 *
 * @param {int} width The width of the svg
 * @param {int} height The height of the svg
-* @param {String} OPTIONAL state The state to us to produce the svg
-*                          		State is currently not used but will
-*                          		be in the future
+* @param {Object} OPTIONAL options The options to us to produce the svg
 * @param {Function} callback The callback to return the SVG/XML
 */
-Graph.prototype.svg = function( width, height, state, callback ){
+Graph.prototype.svg = function( options, callback ){
 	switch( this.type() ){
 		case "hovmollerLat":
 		case "hovmollerLon":
 			var draw = require( root + '/lib/drawHovmoller' );
-			return draw.svg( this.type(), this.json().series, width, height, callback );
+			options = extend({
+				title: this._request.plot.title,
+			}, options);
+			return draw.svg( this.type(), this.json().series, options, callback );
 		default:
 			callback( new Error( "Could not produce SVG for plot type '"+ this.type() +"'" ) );
-
 	}
 }
 
@@ -240,13 +240,15 @@ Graph.prototype.svg = function( width, height, state, callback ){
 *
 * @param {int} width The width of the png
 * @param {int} height The height of the png
-* @param {String} OPTIONAL state The state to us to produce the png
+* @param {Object} OPTIONAL options The options to us to produce the png
 * @param {Function} callback The callback to return the PNG buffer
 */
-Graph.prototype.png = function( width, height, state, callback ){
-
+Graph.prototype.png = function( options, callback ){
 	var draw = require( root + '/lib/drawHovmoller' );
-	draw.png( this.type(), this.json().series, width, height, callback );
+	options = extend({
+		title: this._request.plot.title,
+	}, options);
+	draw.png( this.type(), this.json().series, options, callback );
 
 }
 

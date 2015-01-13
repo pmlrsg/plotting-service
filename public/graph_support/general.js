@@ -61,7 +61,10 @@ Settings = {
    },
    // Get a setting by key
    get: function( key ){
-      return this.values[key];
+      if( key == void(0) )
+         return this.values;
+      else
+         return this.values[key];
    },
    // Set a setting by key and update the hash
    set: function( key, value ){
@@ -77,18 +80,76 @@ Settings = {
 
 var graphController = {
 
+   /**
+   * Sorts the logos disabled by height for style reasons
+   *  - Will not work in IE8
+   */
+   reorderLogos: function (){
+     // Abort if getComputeStyle isnt allowed
+     try{
+        if( ! document.defaultView || ! document.defaultView.getComputedStyle )
+           return;
+
+        var logosElement = document.getElementById( 'logos' );
+        var logosElementWidth = $(logosElement).width();
+
+        var children = [];
+        for ( var i in logosElement.children){
+           if( logosElement.children[i] instanceof HTMLElement )
+              children.push( logosElement.children[i] );
+        }
+
+        children.sort(function( imgElementA, imgElementB ){
+           if( ( (logosElementWidth / 2) / imgElementA.naturalWidth ) * imgElementA.naturalHeight < 35 )
+             return 1;
+
+           var heightA = $( imgElementA )[0].naturalWidth;
+           var heightB = $( imgElementB )[0].naturalWidth;
+           return heightA > heightB ? 1: -1;
+        }).forEach(function( imgElement ){
+           logosElement.appendChild( imgElement );
+
+           if( ( (logosElementWidth / 2) / imgElement.naturalWidth ) * imgElement.naturalHeight < 35 )
+             var width = '100%';
+           else if( ( (logosElementWidth / 2) / imgElement.naturalWidth ) * imgElement.naturalHeight > 150 )
+             var width = '25%';
+           else
+             var width = '50%';
+
+           $(imgElement).css( 'width', width );
+        });
+     }catch(e){};
+
+     $('#controls').css({
+       'bottom': $('#logos').outerHeight() + 'px'
+     });
+   },
+
+   /**
+    * Takes in an array of image urls and add them to
+    * the logos containers
+    * @param Array logos Array of log URLs logos
+    */
+   addLogos: function ( logos ){
+     logos.forEach(function( logo ){
+        var img = document.createElement( 'img' );
+        img.onload = graphController.reorderLogos;
+        img.src = logo;
+        document.getElementById( 'logos' ).appendChild( img );
+     });
+   },
+
 
    downloadInit: false,
    defaultDownloadTypes: [
     { key: 'svg', label: 'SVG' },
     { key: 'png', label: 'PNG' },
-   ]
+   ],
    /**
     * Builds and displays the download graph popup to the user
     * Expects the local paramaters:
     *   @param {Array}     this.request.plot.downloadTypes Array of download types
     *   @oaram {Function}  this.download    A function to handle the download
-    * @return {[type]} [description]
     */
    downloadPopup: function(){ 
       // Init function to generate the download popup
