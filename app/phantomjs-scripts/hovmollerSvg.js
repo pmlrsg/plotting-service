@@ -438,7 +438,7 @@ function hovmoller( option ) {
       var yFunc = function(d, i) { return yScale( parseDate(d[0]) ) - ( cellHeight / 2 ); };
    } else {
       var xFunc = function(d, i) { return  xScale( parseDate(d[0]) ) - ( cellWidth / 2 ); };
-      var yFunc = function(d, i) { return yScale( d[1] ); };
+      var yFunc = function(d, i) { return yScale( d[1] ) - ( cellHeight / 2 ); };
    }
 
    // Put the main graph pixels in
