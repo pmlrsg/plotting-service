@@ -1,10 +1,8 @@
-
+/**
+ * Script used to build the hovmollers
+ */
 var currentLoad = null;
-var reloadAgain = false;
 var imageGenerationTime = -1; // Average time for an image load
-
-// Redownloads the hovmoller for the new screen size
-
 
 // Resets/runs the percentage counter in the loading icon
 var loadingCounterTimeout;
@@ -48,8 +46,12 @@ var hovmollerController = $.extend( graphController, {
 
       // Get the style sheet and build a SVG
       var _this = this;
+
+      // Show loading wheel
       $('.loading').show();
       resetLoadingCounter();
+
+      // Ajax get the SVG
       $.ajax({
          url:  this.imageUrl('svg'),
          dataType: 'text',
@@ -57,36 +59,41 @@ var hovmollerController = $.extend( graphController, {
             callback( svg );
          },
          complete: function(){
-
-            $('.loading').show();
+            $('.loading').hide();
          }
       });
   },
 
    
   /**
-   * This function triggers the download of the current in a certain function.
-   * 
-   * @param  {String} format The format to download in, e.g PNG,SVG,CSV
+   * This function triggers the download.
+   * It will read the checkboxs expected to have been 
+   * produces via the downloadInit function from general.js
    */
-   download: function( format ){
+   download: function(){
       var _this = this;
 
-    this.svg(startDownload);
+      // Fetch the SVG first
+      this.svg(startDownload);
 
-    function startDownload( svg ){
-
-      $('<form>')
-        .attr('method', 'post')
-        .attr('action', root + "/plot/" + plotId + '/download' )
-        .append( $('<input>').attr('type','hidden').attr('name','svg').val( svg ) )
-        .append( $('#download-content input[type=checkbox]:checked').clone() )
-        .hide()
-        .appendTo('body')
-        .submit();
-    };
+      // Create a form and submit all the data
+      // The form is needed because a download can be trigger via 
+      // a form submit but not an AJAX call
+      function startDownload( svg ){
+         $('<form>')
+           .attr('method', 'post')
+           .attr('action', root + "/plot/" + plotId + '/download' )
+           .append( $('<input>').attr('type','hidden').attr('name','svg').val( svg ) )
+           .append( $('#download-content input[type=checkbox]:checked').clone() )
+           .hide()
+           .appendTo('body')
+           .submit();
+      };
   },
 
+   /**
+    * Reloads the hovmoller image
+    */
    reloadImage: function (){
    
       // Show the loading icon
@@ -102,7 +109,7 @@ var hovmollerController = $.extend( graphController, {
          //Store the stop time (for generation time benchmark)
          var endTime = new Date();
 
-         // Assuming when dont already have a generation time,
+         // If we dont already have a estimated generation time,
          // Store this one
          if( imageGenerationTime == -1 )
             imageGenerationTime = endTime - startTime;
@@ -117,7 +124,11 @@ var hovmollerController = $.extend( graphController, {
       }).attr( 'src', this.imageUrl('png') );
 
    },
-
+   /**
+    * Get the image generation URL
+    * @param   String  type  What image is requested, current `svg` or `png`
+    * @return  String        The full URL to the image
+    */
    imageUrl: function( type ){
       // Request params, pass the screen size
       var attrs = {
@@ -128,12 +139,23 @@ var hovmollerController = $.extend( graphController, {
 
       return root + '/plot/' + plotId + '/' + type + '?' + $.param( attrs );
    },
-
+   /**
+    * Init script for the hovmoller.
+    * Does:
+    *    Stores data in local varibles
+    *    Sets up the sidebar buttons, meta text
+    *    Attaches the resize handler to auto reload the image
+    *    Loads the first image
+    *    
+    * @param  Object data Data from the graphs /data request
+    */
    initChart: function( data ){
+      // Store data locally
       this.groups = data.groups;
       this.request = data.request;
       this.series = data.series;
 
+      // Get the template for the sidebar meta
       var html = Templates.get('series')( this.request.plot.data.series[0] );
       $('#sidebar-info').html( html );
 
@@ -149,24 +171,29 @@ var hovmollerController = $.extend( graphController, {
       $('#reverse-y-axis').prop( 'checked', Settings.get( 'reverse-y-axis' ) == '1' );
       $('#reverse-scalebar').prop( 'checked', Settings.get( 'reverse-scalebar' ) == '1' );
 
+      // Attach listeners to the 3 settings buttons so if one
+      // is toggled we update the settings and reload the graph
       $('#flip-x-y-axis, #reverse-y-axis, #reverse-scalebar').change(function(){
          Settings.set( $(this).attr('id'), $(this).prop('checked') ? 1:0 );
          hovmollerController.reloadImage();
       });
 
-      // Resize the image on load
+      // When the page is resized reload the image
+      // so the image always fills 100% of the space
       $(window).resize(function(){
-      
+         // Show the loading text
          $('.loading').show();
          $('.loading span').text( 'Generating...' );
 
-         // Werid hack to keep the image in the center...
-         // Only works because of the CSS also on "#main_img img"
+         // Resize the main image body
          $('#main_img').css({
             width: $(window).width() - $('#sidebar').width(),
             height: $(window).height(),
          });
          
+         // Only generate a new image after a 500mil
+         // wait time because LOTS of resize events are 
+         // sent when the user resizes the browser
          clearTimeout( reloadTimeout );
          reloadTimeout = setTimeout(function(){
             hovmollerController.reloadImage();
@@ -181,14 +208,14 @@ var hovmollerController = $.extend( graphController, {
   /**
    * Starts of the process of building graph.
    * Downloads the graph data and then calls initChart
-   * 
    */
   init: function(){
+   // Init the settings module
+   Settings.load();
 
-    Settings.load();
-
-    var _this = this;
-    $.ajax({
+   // Download the chart data
+   var _this = this;
+   $.ajax({
       dataType: "json",
       url: root + "/job/" + plotId + "/data",
       success: function( data ){
@@ -206,9 +233,8 @@ var hovmollerController = $.extend( graphController, {
 
 });
 
-
-
-// Once everything has loaded build the graph
+// Once the page DOM is loaded
+// start running the build graph scripts
 $(function(){
   Templates.init();
   hovmollerController.init();

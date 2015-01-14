@@ -1,3 +1,6 @@
+/**
+ * Contains general functions used by all the chart scripts
+ */
 
 // Generates unqiue ideas for internal use
 var uuid = (function(){
@@ -11,8 +14,12 @@ var uuid = (function(){
 
 // A simple helper class for storing and generating templates
 Templates = {
+   // Place to store the cached templates
    templates: {},
-   init: function( key ){
+
+   // Init script to find all templates and compile and cache them
+   // Templates are defined by having the id of "{template key}-template"
+   init: function(){
       $('[id*="-template"]').each(function(){
          var templateName = $(this).attr('id');
          templateName = templateName.substr( 0, templateName.indexOf('-template') );
@@ -26,12 +33,23 @@ Templates = {
          return arg1 || arg2 ;
       });
    },
+   /**
+    * Returns a template for the request key or throws error
+    * @param  String    key  The key of the template
+    * @return Function       The handlebars template function
+    */
    get: function( key ){
       if( key in this.templates ) return this.templates[key];
       throw new Error("Template '" + key + "'' does not exists");
    }
 };
 
+/**
+ * Takes in a URL string and returns a 
+ * javascript object with the values
+ * @param  String  searchString  The URL string to decode
+ * @return Object                The string decoded
+ */
 function deserialize( searchString ){
    var o = {};
 
@@ -52,6 +70,9 @@ function deserialize( searchString ){
 Settings = {
    // Place to store the settings
    values : {},
+
+   // Reads the hash and loads in
+   // Basic in init script for this module
    load: function(){
       var hash = window.location.hash;
       if( hash.substr( 0, 1 ) != "#" )
@@ -59,25 +80,43 @@ Settings = {
 
       this.values = deserialize( hash.substr(1) );
    },
-   // Get a setting by key
+   /**
+    * Returns the value for the given key
+    * @param  String key  The key of the setting needed
+    * @return Anything OR undefined if not found
+    */
    get: function( key ){
       if( key == void(0) )
          return this.values;
       else
          return this.values[key];
    },
-   // Set a setting by key and update the hash
+   /**
+    * Sets a setting and updates the hash
+    * @param String  key    The key to update
+    * @param String  value  The value to store
+    * @param String         Returns the value you just set
+    */
    set: function( key, value ){
       this.values[key] = value;
       window.location.hash = decodeURI($.param( this.values ));
       return this.values[key];
    },
+   /**
+    * Removes the data and key
+    * @param String  key    The key to update
+    */
    unset: function( key ){
       delete this.values[key];
       window.location.hash = decodeURI($.param( this.values ));
    }
 };
 
+/**
+ * A base for the the other graphs
+ * Contains some common functions and 
+ * should be extended when used
+ */
 var graphController = {
 
    /**
@@ -139,12 +178,16 @@ var graphController = {
      });
    },
 
-
+   // Has the download box been created yet
    downloadInit: false,
+
+   // Default download types,
+   // these are produced by the system, not source handler
    defaultDownloadTypes: [
     { key: 'svg', label: 'SVG' },
     { key: 'png', label: 'PNG' },
    ],
+   
    /**
     * Builds and displays the download graph popup to the user
     * Expects the local paramaters:

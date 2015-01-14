@@ -1,3 +1,10 @@
+/**
+ * This file has the Graph class. The Graph
+ * class is the most used chunk of code.
+ * It takes in a plot request from the API
+ * and does the downloading of the data and producing
+ * of graphs.
+ */
 var fs   = require('fs');
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
@@ -9,23 +16,12 @@ var Domain = require('domain');
 var Phantom = require('phantom');
 var request = require('request');
 
-
-function phantomPage( callback ){
-	Phantom.create(function(ph){
-		setTimeout(function(){
-			ph.exit();
-		}, 60000);
-
-		ph.createPage(function( page ){
-			page.exitPhantom = function(){
-				ph.exit();
-			};
-			callback( page );
-		})
-	})
-		
-}
-
+/**
+ * Function that takes in an array of numbers
+ * and returns the sum of those numbers
+ * @param  Array arr Array of Numbers
+ * @return int       Sum of array
+ */
 function sum( arr ){
 	var total = 0;
 	
@@ -34,11 +30,22 @@ function sum( arr ){
 	
 	return total
 }
+/**
+ * Function that takes in an array of numbers
+ * and returns the average of those numbers
+ * @param  Array arr Array of Numbers
+ * @return int       Average value of array
+ */
 function avg( arr ){
 	return sum( arr ) / arr.length
 }
 
-
+/**
+ * Constructor for the Graph object.
+ * Mostly just stores so local variables and
+ * gives the code creating the class chance
+ * to add add event listeners 
+ */
 var Graph = function ( request ) {
 	EventEmitter.call( this );
 	
@@ -60,7 +67,8 @@ util.inherits(Graph, EventEmitter);
 
 var source_handlers = {};
 /**
-* Get all the valid handlers
+* Load all the source handlers from
+* the source_handlers directory
 */
 fs.readdir(__dirname +'/../source_handlers/', function(err, files){
 	if( err ) throw err;
@@ -302,69 +310,6 @@ Graph.prototype.html = function(callback, settings ){
 	    });
 	});
 	
-	
-}
-
-
-Graph.prototype.loadGraphInPhantomPage = function( callback, width, height ){
-	
-	var sequence = Sequence.create();
-	var data = {};
-	
-	var domain = Domain.active;
-	
-	sequence
-		/**
-		* Creates a page in phantom and sets its view port
-		*/
-		.then(domain.bind(function( next ){
-			//logger.log('info', 'Generating phantom page', { job_id : _this.id() });
-			phantomPage(domain.bind(function (page) {
-				
-				//Set up the page
-				data.page = page;
-				data.page.set('viewportSize',{
-					width: width,
-					height: height
-				});
-				
-				//Log any JS errors on the page
-				data.page.set('onError', domain.bind(function(msg, trace) {
-					var msgStack = [ new Error('NODE ERROR (in phantom):'), 'PHANTOM ERROR: ' + msg];
-					
-					if (trace && trace.length) {
-						msgStack.push('TRACE:');
-						trace.forEach(function(t) {
-							msgStack.push(' -> ' + t.file + ': ' + t.line + (t.function ? ' (in function "' + t.function +'")' : ''));
-						});
-					}
-					throw new Error(msgStack.join('\n'));
-				}));
-				
-				//Error if resources fail to load
-				data.page.set('onResourceError', domain.bind(function(resourceError) {
-					throw new Error("Could not load PhantomJS resource: " + resourceError.url);
-				}));
-				/*
-				//Detect when the graph has finished loading
-				data.page.set('onConsoleMessage' , domain.bind(function(msg) {
-					if( msg == "graph-loaded" )
-						next();
-				}));
-				*/
-				//Load the noninteractive graph
-				data.page.open( config.serverAddress + '/job/' + domain.job.id() + '/noninteractive' , function(status) {
-					next();
-				});
-			}));
-		}))
-		
-		/**
-		* Return the page
-		*/
-		.then(function(){
-			callback( data.page );
-		})
 	
 }
 

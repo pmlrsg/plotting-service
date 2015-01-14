@@ -1,61 +1,60 @@
-var start = (new Date);
+/**
+ * This script runs in phantom JS
+ * It generates a hovmoller and returns in PNG or SVG
+ *
+ * The script is spawned from node and as the data
+ * streamed in and the output streamed out
+ */
+
 var webPage = require('webpage');
 var system = require('system');
 var fs = require('fs');
 
 //  Because phantom doesnt do this on its own for some reason
 phantom.onError = function(msg, trace) {
-  var msgStack = ['PHANTOM ERROR: ' + msg];
-  if (trace && trace.length) {
-    msgStack.push('TRACE:');
-    trace.forEach(function(t) {
-      msgStack.push(' -> ' + (t.file || t.sourceURL) + ': ' + t.line + (t.function ? ' (in function ' + t.function +')' : ''));
-    });
-  };
-  system.stderr.write( msgStack.join('\n') );
-  phantom.exit(0);
+   var msgStack = ['PHANTOM ERROR: ' + msg];
+   if (trace && trace.length) {
+      msgStack.push('TRACE:');
+      trace.forEach(function(t) {
+         msgStack.push(' -> ' + (t.file || t.sourceURL) + ': ' + t.line + (t.function ? ' (in function ' + t.function +')' : ''));
+      });
+   };
+   system.stderr.write( msgStack.join('\n') );
+   phantom.exit(0);
 };
 
-// Get the parameters
-var width = null;
-var height = null;
-var data = null;
-var type = null;
-var returnType = null;
-
-var inputLength = -1;
+// Stream the input into a file
 var input = "";
-
-
-
-
 while(!system.stdin.atEnd()) {
     input += system.stdin.readLine();
 }
-gotInput();
 
+// Convert the input into JSON
+try{
+  input = JSON.parse( input );
+}catch(e){
+  throw new Error( "Input JSON is not valid!" );
+};
 
-function gotInput(){
-   try{
-      input = JSON.parse( input );
-   }catch(e){
-      throw new Error( "Input JSON is not valid!" );
-   };
+returnType = input.returnType;
 
-   returnType = input.returnType;
+// Run the convert script
+convert();
 
-   go();
-}
-
-function go(){
-   // Load the webpage
+/**
+ * To be called once the input variable has the JSON
+ * Will actually run the hovmoller function and stream
+ * stream it back to the browser
+ */
+function convert(){
+   // Load a empty
    var page = webPage.create();
 
    // Include d3 into the run time
    if ( ! page.injectJs( fs.workingDirectory + '/public/d3.js' )) 
       throw new Error( 'Could not load /public/d3.js' );
 
-   // Inject the function and the parameters
+   // Build the hovmoller options from the input
    var options = {
       type: input.type,
       data : input.data,
@@ -66,11 +65,12 @@ function go(){
       flipScalebar : input['reverse-scalebar'] == 1 ? true:false,
       flipYAxis : input['reverse-y-axis'] == 1 ? true:false,
    }
-   var svg = page.evaluate( hovmoller, options );
-   var stop = (new Date);
-   var randomTemp = '/tmp/' + start.getTime() + '-' + stop.getTime() + '.png';
-   
 
+   // Inject the function and the parameters
+   var svg = page.evaluate( hovmoller, options );
+
+   // Return the hovmoller in the users request
+   // format of fail
    if( returnType == "svg" ){
       system.stdout.write( svg );
       phantom.exit(0);
@@ -85,10 +85,21 @@ function go(){
 };
 
 
-//function hovmoller( type, data, overallWidth, overallHeight ) {
+/**
+ * This function gets ran in the phantomjs
+ * website window.
+ *
+ * This function is ran in a DIFFERENT JS RUN TIME
+ * the cope from out here and in there is different
+ * you can only pass data in through the parameters
+ * and out through the return apartment.
+ */
 function hovmoller( option ) {
+   // Calls some basic preload functions located
+   // at the end of this function
    preLoad();
 
+   // Copy the options into local variables
    var type = option.type;
    var overallWidth = option.overallWidth;
    var overallHeight = option.overallHeight;
@@ -108,17 +119,24 @@ function hovmoller( option ) {
       h : overallHeight
    };
 
+   /**
+    * Returns the empty width which isn't taken by padding
+    */
    function availableWidth(){
       return overallWidth - ( margin.left + margin.right );
    }
 
+   /**
+    * Returns the empty height which isn't taken by padding
+    */
    function availableHeight(){
       return overallHeight -  ( margin.top + margin.bottom );
    }
    
+   // Return the browsers default padding
    d3.select('body').attr('style', 'padding:0px; margin:0px;')
 
-   // Create svg element using overall_dims
+   // Create svg element using 
    var svg = d3.select('body').append('div')
       .append('svg')
       .attr("width", overall_dims.w )
@@ -130,8 +148,7 @@ function hovmoller( option ) {
    // Create main g element to contain graph transform to make 0,0 be inside the margins
    var g = svg.append("g");
    
-   
-
+   // Set the correct date parses
    if (trends.values[0][0].indexOf("Z") > -1)
       var parseDate = d3.time.format("%Y-%m-%dT%H:%M:%SZ").parse;
    else
@@ -147,6 +164,8 @@ function hovmoller( option ) {
       // How much room does the header need
       var titleAreaHeight = 40;
       margin.top += titleAreaHeight;
+
+      // Append the text
       svg.append('text')
          .text(title)
          .attr("x",  overallWidth/2 )
@@ -155,12 +174,14 @@ function hovmoller( option ) {
          .style("text-anchor", "middle")
          .attr("dominant-baseline", 'middle');
    }else
+      // If theres no title, what padding do we want
       margin.top += 10;
 
-   //---------------------------
+   //----------------------------
    // Prepare the data!
 
-   // X and Y axis data
+   // Setup the X and Y scales
+   // Add the amount of room needed for the axis
    if ( switchAxis == false ) {
       
       // How much room does the x and y axis need ?
@@ -199,7 +220,7 @@ function hovmoller( option ) {
    }
 
    
-   // Z axis stuff
+   // Setup the Z scale
    var scale = [];
    var colors = getColorPalette();
 
@@ -231,11 +252,12 @@ function hovmoller( option ) {
       .attr("x2", "0%")
       .attr("spreadMethod", "pad");
    
-   // Are what distances should <stop> be put in on the gradient bar
+   // At what distances should <stop> be put in on the gradient bar
+   // (Look at an ouput SVG to get a clear idea of this)
    var stopAmounts = [0, 0.5,6.25, 12.5, 18.75, 25, 31.25, 37.5, 43.75, 50, 56.25, 62.5, 68.75, 75, 81.25, 87.5, 93.75, 99.5, 100 ];
 
 
-   // Add each colour to the legend at intervals
+   // Add the legend gradient (not the actually displaying it)
    gradient
       .selectAll('stop')
       .data(stopAmounts)
@@ -245,12 +267,13 @@ function hovmoller( option ) {
          .attr("stop-color", function(d,i){ return zcolorForPercentage( ( flipScalebar ? d : 100-d ) ); })
          .attr("stop-opacity", 1);
 
-   
+   // Add a wrapper for the legend
    var legened = svg.append("g")
       .attr('height', legendHeight )
       .attr("class", "legend_group")
       .attr("transform", "translate("+[ overallWidth - margin.right , margin.top ]+")")
-      
+   
+   // Add the rect that uses the gradient (made above)
    legened.append("rect")
       .attr("class", "legend")
       .attr("width", 20)
@@ -258,7 +281,7 @@ function hovmoller( option ) {
       .attr("style", "fill: url('#gradient');")
       .attr("transform", "translate(" + [ legendPadding, legendPadding ]+")");
    
-   // 5 legend values
+   // What legend percentages should be shown 
    var legend_data = [0,25,50,75,100];
    
    // Display legend values
@@ -277,21 +300,30 @@ function hovmoller( option ) {
 
 
    // Calculate range bands for because d3 wont!
-   // dateRangeBand
+   // Note: Range bands only work with linear scales
+   // and they have side effects when printing the a scale such as adding huge
+   // amounts of paddding.
+   // 
+   // Calculation it our selves produces better results
 
+   // Count the unique values and work out how big each SVG cell should be
    var uniqueXCount = d3.unique( trends.values, function(x){ return x[switchAxis?0:1] } );
    var cellWidth = (availableWidth() / uniqueXCount) * 1.1;
    if( cellWidth < 1 )
       cellWidth = 1;
 
+   // Same again but on the Y axis
    var uniqueYCount = d3.unique( trends.values, function(x){ return x[switchAxis?1:0] } );
    var cellHeight = (availableHeight() / uniqueYCount) * 1.1;
    if( cellHeight < 1 )
       cellHeight = 1;
 
+   // Add the range removing half the width of cell to account for 
+   // that we shift all the cells of 50% so the squares are centers
    var range = [ 0 + (cellWidth/2), availableWidth() - (cellWidth/2) ];
    xScale.range(range);
 
+   // Same again but on the Y axis
    var range = [  availableHeight() - (cellHeight/2), 0 + (cellHeight/2) ];
    if( flipYAxis )
       range.reverse();
@@ -300,7 +332,7 @@ function hovmoller( option ) {
    var xAxis,
       yAxis;
    
-
+   // Display the axis!
    if( switchAxis == false ) {
       xAxis = d3.svg.axis()
          .scale(xScale) // set the range of the axis
@@ -314,6 +346,11 @@ function hovmoller( option ) {
          .orient("left")
          .tickFormat(d3.time.format("%d/%m/%Y"));
 
+      // If the graph is small d3 poorly chooses what ticks to show
+      // (comment out the code and see if you like), its and issue 
+      // to do with d3 choosing `nice` ticks.
+      // 
+      // Override the default amount of ticks
       if( cellHeight > 40 ){
          yAxis.tickValues(trends.values.map(function(d) { 
             return parseDate(d[0]);
@@ -328,6 +365,11 @@ function hovmoller( option ) {
          .tickFormat(d3.time.format("%d/%m/%Y"));
       
 
+      // If the graph is small d3 poorly chooses what ticks to show
+      // (comment out the code and see if you like), its and issue 
+      // to do with d3 choosing `nice` ticks.
+      // 
+      // Override the default amount of ticks.
       if( cellWidth > 70 ){
          xAxis.tickValues(trends.values.map(function(d) { 
             return parseDate(d[0]);
@@ -343,7 +385,7 @@ function hovmoller( option ) {
    }
 
    
-   
+   // Work out what name each axis should have
    if( switchAxis == false ){
       xAxisName = (type == 'hovmollerLon' ? "Longitude":"Latitude");
       yAxisName = "Time";
@@ -389,43 +431,30 @@ function hovmoller( option ) {
       .style("text-anchor", "middle")
       .text( yAxisName );
 
-
+   // Set the functions for computing the main graph area x and y location
+   // This changes depending on what axis is the date and whats the value
    if ( switchAxis == false ) {
-       var rects = g.append('g')
-         .attr("transform", "translate(" + [ margin.left, margin.top ] + ")")
-         .selectAll("rects")
-         .data(trends.values)
-         .enter()
-            .append("rect")
-                .attr("x", function(d, i) { return  xScale( d[1] ) - ( cellWidth / 2 ); })
-                .attr("y", function(d, i) { return yScale( parseDate(d[0]) ) - ( cellHeight / 2 ); })
-                .attr("class", "graph-rect")
-                .attr("width", cellWidth)
-                .attr("height", cellHeight )
-                .style("fill", function(d, i) { 
-                   return zcolorForValue( d[2] ); 
-                });
-    
-
+      var xFunc = function(d, i) { return  xScale( d[1] ) - ( cellWidth / 2 ); };
+      var yFunc = function(d, i) { return yScale( parseDate(d[0]) ) - ( cellHeight / 2 ); };
    } else {
-
-      var rects = g.append('g')
-         .attr("transform", "translate(" + [ margin.left, margin.top ] + ")").selectAll("rects")
-         .data(trends.values)
-         .enter()
-            .append("rect")
-                .attr("x", function(d, i) { return  xScale( parseDate(d[0]) ) - ( cellWidth / 2 );; })
-                .attr("y", function(d, i) { return yScale( d[1] ); })
-                .attr("class", "graph-rect")
-                .attr("width", cellWidth)
-                .attr("height", cellHeight)
-                .style("fill", function(d, i) { 
-                   return zcolorForValue( d[2] ); 
-                });
+      var xFunc = function(d, i) { return  xScale( parseDate(d[0]) ) - ( cellWidth / 2 ); };
+      var yFunc = function(d, i) { return yScale( d[1] ); };
    }
 
-
-   //g.selectAll(".xaxis text").attr("transform", "translate("+availableWidth()/365/2+",0)");
+   // Put the main graph pixels in
+   var rects = g.append('g')
+      .attr("transform", "translate(" + [ margin.left, margin.top ] + ")").selectAll("rects")
+      .data(trends.values)
+      .enter()
+         .append("rect")
+            .attr("x", xFunc )
+            .attr("y", yFunc )
+            .attr("class", "graph-rect")
+            .attr("width", cellWidth)
+            .attr("height", cellHeight)
+            .style("fill", function(d, i) { 
+               return zcolorForValue( d[2] ); 
+            });
 
    /**
     * Takes a z axis value and returns the color
@@ -453,11 +482,18 @@ function hovmoller( option ) {
       return zScale.domain()[0] + (x * percentage);
    }
 
+   /**
+    * Wraps the 2 functions above into 1.
+    * Allows you to get a percentage and get the color
+    * 
+    * @param  {int} percentage      The z-axis value
+    * @return {String}         The color in hex or rgb
+    */
    function zcolorForPercentage( percentage ) {
       return zcolorForValue( zvalueForPercentage(percentage) );
    }
 
-
+   // Get the SVG XML for what we just made and return it
    var parent = d3.select(svg.node().parentNode);
    var svgXML = parent.html();
 
@@ -466,6 +502,9 @@ function hovmoller( option ) {
 
    /////// Support functions
    
+   // Gets the array of colors palettes
+   // We could swap this out for other palettes
+   // Or a generator function instead of a manually typed array
    function getColorPalette(){
       return [
          "rgb(0,0,0)",
@@ -727,7 +766,18 @@ function hovmoller( option ) {
       ];
    }
 
+   /**
+    * Preload functions. Only has 2 thing right now
+    * Adds a `unique` function to d3 to return a 
+    * count of unique values
+    */
    function preLoad(){
+      /**
+       * Returns a count of the number of unique values
+       * @param  {[type]} array                Array to loop over
+       * @param  Function OPTIONAL  accessor   Array accessor method
+       * @return int          
+       */
       d3.unique = function( array, accessor ){
          accessor = accessor || function(x){ return x };
          var found = {};
