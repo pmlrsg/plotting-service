@@ -125,7 +125,6 @@ graphController.show = function( req, res, next ){
             break;
 
       }
-      //job.serveAnswer( returnType, req , res );
    });
 
    

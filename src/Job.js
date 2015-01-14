@@ -1,17 +1,30 @@
+/**
+ * Jobs are to be used with the Manager class
+ * The idea of a Job is a class that can be extend
+ * and then sent to the manager so that it can be
+ * handled, deleted, clean up after it, etc..
+ *
+ * Due to the limited size of this project and
+ * the fact that lots of code, mostly the processing
+ * of the data will not be going in to this project
+ * the Job and Manager stuff could be removed.
+ * 
+ */
 var Domain = require('domain');
 var util = require('util');
 var fs = require('fs');
 var extend = require('node.extend');
 var EventEmitter = require('events').EventEmitter;
 
-
+/**
+ * Creates a job class
+ */
 function Job(){
 
 	EventEmitter.call( this, arguments );
 	
 	this._id = Math.floor(Math.random() * 1000);
-	//this.id( 5555 );
-	
+
 	this._status = {
 		message: "Unknown",
 		state: 'processing', // ( error | success | processing )
@@ -27,6 +40,8 @@ function Job(){
 	this.domain.job = this;
 	var _this = this;
 	
+	// Monitor different status update events
+
 	this.on('error' ,function( errorMessage ){
 		_this._status.state = 'error'; // ( error | success | processing )
 		_this._status.completed = true
@@ -48,7 +63,7 @@ function Job(){
 		_this._status.message = 'Validating graph';
 	});
 	
-	//If the domain errors:
+	//If the job errors then clean up
 	this.domain.on('error', function( err ){
 		
 		var meta =  { job_id : _this.id(), error_message : err, error_stack : err.stack };
@@ -103,13 +118,6 @@ Job.prototype.status = function(value) {
 */
 Job.prototype.completed = function() {
 	return this._status.completed;
-};
-
-/**
-* Each job should have a serveAnswer function. If not then throw 404
-*/
-Job.prototype.serveAnswer = function( res ){
-	res.send( 404, 'A output type has not been set' );
 };
 
 
