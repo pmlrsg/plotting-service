@@ -182,7 +182,7 @@ OPEC_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 	// Timeseries requests contain multiple Y points
 	// Extract each point and move it to its own series
 	var defaltVariables = ['mean'];
-	var variableKeys = [ 'std', 'min', 'max', 'median', 'mean' ];
+	var variableKeys = [ 'min', 'max', 'median', 'mean' ];
 	for( var variableKeyId = 0; variableKeyId < variableKeys.length; variableKeyId++ ){
 		
 		var variable = variableKeys[variableKeyId];
@@ -194,7 +194,8 @@ OPEC_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 			type : 'line', //graph type (line|bar|etc...)
 			yAxis : this._series.yAxis, //graph axis
 			disabled : defaltVariables.indexOf( variable) == -1,
-			values: [] // place to store the points
+			values: [], // place to store the points
+			error: variable == 'mean'
 		};
 
 		newSeries.groupKey = groupKey,
@@ -206,6 +207,10 @@ OPEC_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 				x : i, // x axis,
 				y : this._data[ i ][ variable ] // y axis
 			};
+
+			// Add error range to the mean
+			if( variable == "mean" )
+				point.error = this._data[i][ 'std' ];
 			
 			
 			newSeries.values.push( point );

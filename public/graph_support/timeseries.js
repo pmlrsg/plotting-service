@@ -334,6 +334,10 @@ var timeseriesController = $.extend( graphController, {
     if( Settings.get('join-data-gaps') != "true" )
       seriesToShow = this.splitAllSeriesOnGap( seriesToShow );
 
+    this.chart.showErrorBars( Settings.get('show-std-area') == "true" );
+
+    
+
     // Update the array thats INSIDE nvd3
     // We kept the pointer to the array we gave
     var args = [ 0, this.graphSeries.length ].concat( seriesToShow );
@@ -727,6 +731,18 @@ var timeseriesController = $.extend( graphController, {
     if( Settings.get('join-data-gaps') == "true")
       $('#join-data-gaps').prop( 'checked', true );
 
+
+    $('#show-std-area').change( function(){
+      Settings.set('show-std-area' , $(this).prop('checked').toString());
+      timeseriesController.updateViewSeries()
+    });
+
+    if( Settings.get('show-std-area') == void(0) )
+      Settings.set('show-std-area', "true");
+
+    // Restore the checkbox status for Join Gaps
+    $('#show-std-area').prop( 'checked', Settings.get('show-std-area') == "true" );
+
     //Set all series to show by default
     this.originalSeries.forEach(function( series ){
       series.disabled = false;
@@ -735,6 +751,21 @@ var timeseriesController = $.extend( graphController, {
     // Update the graph to read the new
     // set of series to show
     this.updateViewSeries();
+
+    this.chart.tooltipContent(function( key, x, y, e, chart ){
+      y = Math.round( y * 1000 ) / 1000;
+      if( e.point.error ){
+        var error = Math.round( e.point.error * 1000 ) / 1000;
+        sub = 'Mean: ' + y + ' STD: &plusmn;' + error
+      }else{
+        sub = y
+      }
+
+
+      sub += ' at ' + x;
+      return '<h3>' + key + '</h3>' +
+        '<p>' +  sub + '</p>';
+    });
 
     // Track brush changes and store them in the header
     this.chart.on( 'brush.url', function(){
