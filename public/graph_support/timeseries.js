@@ -113,6 +113,7 @@ function makeGraph( series, request ) {
     chart.xAxis.axisLabel( request.plot.xAxis.label );
     chart.x2Axis.axisLabel( request.plot.xAxis.label );
     chart.xAxis.scale( getScale( 'time' ) );
+    chart.x2Axis.scale( getScale( 'time' ) );
 
     // Use the request X axis tick style
     // or just use the default American mm/dd/yyyy
@@ -120,7 +121,7 @@ function makeGraph( series, request ) {
       var xAxisTickFormat = request.plot.xAxis.tickFormat;
     else
       var xAxisTickFormat = '%x';
-    
+
    // Apply the tick formats
     chart.xAxis.tickFormat(function(d) {
       return d3.time.format(xAxisTickFormat)(new Date(d))
