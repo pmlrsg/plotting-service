@@ -7,7 +7,7 @@
 function getScale( scaleType ){
    switch( scaleType ){
       case "time":
-         return d3.time.scale();
+         return d3.time.scale().nice();
       case "linear":
          return d3.scale.linear();
       case "log":
@@ -120,7 +120,7 @@ function makeGraph( series, request ) {
       var xAxisTickFormat = request.plot.xAxis.tickFormat;
     else
       var xAxisTickFormat = '%x';
-
+    
    // Apply the tick formats
     chart.xAxis.tickFormat(function(d) {
       return d3.time.format(xAxisTickFormat)(new Date(d))
