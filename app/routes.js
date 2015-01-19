@@ -20,14 +20,14 @@ function routes( app ){
    // URL parameters
    app.param('id', /^\d+$/); //job_id
    app.param('sourceHandlerId', /^\d+$/); //job_id
-   app.param('returnType', /^(data|interactive|csv)$/); //Export types for graphs
+   app.param('returnType', /^(data|interactive|png|svg)$/); //Export types for graphs
 
 
    // Graphs
    app.post('/plot', controllers.graph.create);
    app.get('/plot/:id/status', controllers.graph.status);
    app.post('/plot/:id/download', controllers.graph.download);
-   app.get('/plot/:id/:returnType/:sourceHandlerId?', controllers.graph.show);
+   app.get('/plot/:id/:returnType', controllers.graph.show);
 
    // Legacy support, to be removed
    app.get('/job/:id/status', controllers.graph.status);

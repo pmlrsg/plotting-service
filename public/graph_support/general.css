@@ -1,0 +1,243 @@
+body{
+   margin: 0px;
+   height: 100%;
+   font-family: 'Open Sans', sans-serif;
+}
+#logos{
+   position: absolute;
+   bottom: 0px;
+   right: 0px;
+   width: 100%;
+   padding: 4px;
+   box-sizing: border-box;
+   background-color: white;
+}
+#logos img{
+   width: 0px;
+   height: auto;
+   float: left;
+}
+
+#chart-wrap{
+   position: absolute;
+   top: 0px;
+   left: 0px;
+   bottom: 0px;
+   right: 250px;
+}
+#sidebar{
+   position: absolute;
+   top: 0px;
+   right: 0px;
+   bottom: 0px;
+
+   width: 250px;
+   box-sizing: border-box;
+
+   border-left: 2px solid black;
+}
+
+#controls{
+   position: absolute;
+   top: 0px;
+   right: 0px;
+   bottom: 0px;
+
+   width: 100%;
+   padding: 10px;
+   box-sizing: border-box;
+
+   overflow-y: scroll;
+}
+
+.bounds-holder {
+   padding-bottom: 6px;
+}
+.bounds-holder > div{
+   width: 33%;
+   display: inline-block;
+}
+.bounds-input-holder {
+   position: relative;
+}
+.bounds-input-holder span{
+   position: absolute;
+   cursor: pointer;
+   right: 0px;
+   top: 50%;
+   margin-top: -6px;
+   font-size: 14px;
+}
+
+.bounds-input-holder input.active + span:before{
+   color: black;
+   content: "\f023"
+}
+.bounds-input-holder input + span:before{
+   color: gray;
+   content: "\f09c"
+}
+
+.bounds-holder > span{
+   text-align: center;
+   width: 28%;
+   display: inline-block;
+}
+.bounds-holder input{
+   width: 100%;
+}
+
+.bounds-titles{
+   width: 33%;
+   text-align: center;
+}
+
+.bounds-titles.left{ float: left; }
+.bounds-titles.right{ float: right; }
+
+.pointer{
+   cursor: pointer;
+}
+
+#series label{
+   display: inline-block;
+   margin: 2px;
+   padding: 5px;
+   font-size: 13px;
+}
+
+.seriesGroup{
+   font-size: 14px;
+   margin: 0px -10px;
+   padding: 1px 10px;
+}
+
+#series label span{
+   width: 8px;
+   height: 8px;
+   display: inline-block;
+   border: 2px solid;
+   border-radius: 50%;
+   position: relative;
+   top: 2px;
+}
+
+#series input[type="checkbox"]:not(:checked) + label span{
+   background-color: white !important;
+}
+#series input[type="checkbox"]{
+   display: none;
+}
+
+#series > div:nth-child(odd)     { background-color:#eee; }
+#series > div:nth-child(even)    { background-color:#fff; }
+
+.toggle-meta-information{
+   cursor: pointer;
+}
+.meta-information{
+   display: none;
+}
+
+h2{
+   margin-bottom: 2px;
+}
+h4{
+   margin-bottom: 2px;
+   margin-top: 10px;
+}
+
+.clearfix:before,
+.clearfix:after {
+    content: " ";
+    display: table;
+}
+
+.clearfix:after {
+    clear: both;
+}
+
+.backdrop{
+   position: absolute;
+   top: 0px;
+   left: 0px;
+   right: 0px;
+   bottom: 0px;
+   background-color: rgba( 0, 0, 0, 0.5 );
+   display: none;
+}
+.download-outer-wrap{
+   display: table;
+   height: 100%;
+   width: 100%;
+}
+.download-inner-wrap{
+   display: table-cell;
+   vertical-align: middle;
+   text-align: center;
+}
+#download-content{
+   background-color: #B1A7BC;
+   display: inline-block;
+   padding: 10px;
+   border-radius: 3px;
+   width: 214px;
+}
+
+#download-content h3{
+   margin-top: 3px;
+}
+
+#download-formats div{
+   width: 50%;
+   text-align: left;
+   float: left;
+}
+
+#download-content button{
+   width: 90%;
+   border-radius: 5px;
+   border: none;
+   padding: 5px;
+   background-color: ivory;
+   font-size: 16px;
+   margin: 6px;
+   cursor: pointer;
+}
+#download-content button:hover{
+   box-shadow: inset 0px 2px 14px -7px rgba(0,0,0,0.75);
+}
+
+.align-right{
+   text-align: right;
+}
+
+.fa-close{
+   cursor: pointer;
+}
+
+.more-information-text{
+   font-weight: 100;
+   font-size: 11px;
+   color: blue;
+   display: block;
+   text-align: center;
+   cursor: pointer;
+}
+
+
+.trigger-download-button{
+   margin-top: 20px;
+   width: 100%;
+   padding: 7px;
+   font-size: 18px;
+   border: none;
+   border-radius: 3px;
+   background-color: #A19D63;
+   color: white;
+   cursor: pointer;
+}
+
+#controls .setting-option{
+   display: block;
+}

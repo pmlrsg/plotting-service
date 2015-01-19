@@ -1,3 +1,8 @@
+/**
+ * This file/module controllers the the routes relating to the graph.
+ * These are /plot/*
+ */
+
 var url = require( 'url' );
 var GraphJob = require( root + '/src/GraphJob' );
 var domain = require('domain');
@@ -14,6 +19,13 @@ module.exports = graphController;
 
 function graphController(){};
 
+/**
+ * Handlers the creation of new graphs.
+ * Expects a graph request. See example folder for
+ * graph request examples.
+ * 
+ * @return JSON        Returns JSON string with the id of the job
+ */
 graphController.create = function( req, res, next ){
    
    var request = req.param( 'request' );
@@ -30,9 +42,11 @@ graphController.create = function( req, res, next ){
 
 
 /**
-* Returns the current status of a job you requested
+* Returns the current status of a job you requested.
+* With throw 404 if the job id doesnt exist.
+* Jobs can throw a 404 is the server restarted.
 * 
-* @return {JSON} States of the job you requested
+* @return {JSON} Status of the job you requested
 */
 graphController.status = function( req, res, next ){
 
@@ -52,39 +66,65 @@ graphController.status = function( req, res, next ){
 
 /**
 * Returns the data of the job in the requested format.
-* Correct headers are sent to maktch the content type
+* Correct headers are sent to match the content type.
+* Relevant types:
+*    interactive : Used for the popup to load the graph, sidebar,etc
+*    data :     Returns the JSON needed to display the graph. Used by
+*               interactive but could be used by anything.
+*    png :      A PNG of the graph, requirments differ depending on graph type
+*    svg :      Same as above, paramaters need to complete the request
+*               will depend on graph type
+*    
 * 
 * @return {Binary} Returns data that suits the Job type
 */
 graphController.show = function( req, res, next ){
 
+   // Find the job of throw 404
    var job = manager.getJob( req.param( 'id' ).input );
    if( !job )
       return res.send( 404, "Job not found" );
    var graph = job._graph;
 
+   // Get the rquest show format
    var returnType = req.param( 'returnType' ).input;
    logger.log('info', 'Serving graph in format ' + returnType , { job_id : job.id(), return_type : returnType });
    
+   // Create a domain in case it errors
    var d = domain.create();
    d.on('error', next);
    d.run(function(){
+
+      // Find the correct show format
       switch( returnType ){
          case "interactive":
             res.render( 'graphs/' + graph.type(),{
                plotId: job.id()
-            } );
+            });
             break;
          case "data":
             res.json( graph.json() );
             break;
-         case "csv":
-            var sourceHandlerId = req.param('sourceHandlerId');
-            res.send( graph.csv( sourceHandlerId ) );
+         case "png":
+            graph.png( req.query, function( err, pngBuffer ){
+               if( err )
+                  return next( err );
+               
+               res.setHeader('Content-Type', 'image/png' );
+               res.send( pngBuffer );
+            });
+            break;
+         case "svg":
+            graph.svg( req.query, function( err, svgBuffer ){
+               if( err )
+                  return next( err );
+               
+               res.setHeader('Content-Type', 'image/svg+xml' );
+               res.send( svgBuffer );
+            });
             break;
 
       }
-      //job.serveAnswer( returnType, req , res );
    });
 
    
@@ -92,10 +132,12 @@ graphController.show = function( req, res, next ){
 
 
 /**
-* Returns the data of the job in the requested format.
-* Correct headers are sent to maktch the content type
+* Will return a zip of the request graph type.
+* This expects an array of the download formats needed
+* Also expects the SVG posted used to generate the PNG
+* and to return in the zip
 * 
-* @return {Binary} Returns data that suits the Job type
+* @return {Binary} The zip file
 */
 graphController.download = function( req, res, expressNext ){
 
@@ -124,14 +166,23 @@ graphController.download = function( req, res, expressNext ){
    archive.on( 'error', expressNext );
    archive.pipe( res );
 
-   // Que up the different resources needed for ziping
+   // Use lateral to run multiple things asynchronously 
    var lateral = Lateral.create(runResourceFunction, 5);
+
+   // Helper to allow the running/adding of single
+   // items at a time
    lateral.push = function( item ){
       this.add( [item] );
    };
+
+   // Helper function for latteral that allows use 
+   // to just que up functions for completion
    function runResourceFunction( complete, item, i ){
       item( complete, item, i );
    }
+
+   // Place to store errors and return them
+   // in the zip later if they occur
    var errorLog = [];
 
    // Add the PNG if asked for
@@ -173,6 +224,7 @@ graphController.download = function( req, res, expressNext ){
    graph.sourceHandlers().forEach( getSourceHandlerResources );
    function getSourceHandlerResources( sourceHandler ){
       lateral.push(function( complete, _, i ){
+         // Request the source handler for the needed format
          sourceHandler.addResourcesToArchive( formats, archive, complete );
       });
    }

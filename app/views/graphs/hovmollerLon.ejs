@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+      <meta charset="utf-8">
+
+      <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+      <link href='//fonts.googleapis.com/css?family=Open+Sans:400italic,700,400' rel='stylesheet' type='text/css'>
+      <link href="<%- config.serverAddress %>/graph_support/general.css" rel='stylesheet' type='text/css'>
+      <link href="<%- config.serverAddress %>/tooltipster/tooltipster.css" rel='stylesheet' type='text/css'>
+
+      <script>
+      var root = "<%- config.serverAddress %>";
+      </script>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0/handlebars.min.js"></script>
+      <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+      <script src="<%- config.serverAddress %>/tooltipster/jquery.tooltipster.min.js"></script>
+      <script src="<%- config.serverAddress %>/es5.js"></script>
+      <script src="<%- config.serverAddress %>/graph_support/general.js"></script>
+      <script src="<%- config.serverAddress %>/graph_support/hovmoller.js"></script>
+
+      <style>
+         body{
+            margin: 0px;
+            overflow: hidden;
+         }
+
+         #main_img{
+            overflow: hidden;
+            text-align: center;
+         }
+
+         .loading{
+            transform: translate(-50%, -50%);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            background-color: rgba(0, 0, 0, 0.63);
+            padding: 10px;
+            text-align: center;
+            color: white;
+            font-family: Verdana;
+         }
+         #main_img img{
+            max-width: 100%;
+            max-height: 100%;
+         }
+      </style>
+      <script>
+
+         var container = '#chart';
+         var containerId = 'chart';
+
+         // These are populated from Node
+         var plotId = <%- plotId %>;
+
+      </script>
+      <script id="download-type-template" type="text/x-handlebars-template">
+         <div>
+            <label>
+               <input type="checkbox" name="formats[]" checked value="{{ key }}" >
+               {{label}} 
+            </label>
+         </div>
+      </script>
+      <script id="series-template" type="text/x-handlebars-template">
+         <h4>{{label}}</h4>
+         {{#if meta}}
+            <div data-key="{{key}}" class="js-meta-information meta-information " style="display: block;">{{{meta}}}</div>
+         {{/if}}
+      </script>
+   </head>
+   <body>
+      <div id="main_img">
+
+      </div>
+      <div class="loading">
+         <img  src="http://pmpc1310.npm.ac.uk/plotting/loading.gif"><br>
+         <span>Generating...</span>
+      </div>
+
+      <div id="sidebar">
+         <div id="controls">
+            <div>
+               <label class="setting-option">
+                  <input type="checkbox" id="flip-x-y-axis" />
+                  Flip X and Y Axis
+               </label>
+               <label class="setting-option">
+                  <input type="checkbox" id="reverse-y-axis" />
+                  Reverse Y 
+               </label>
+               <label class="setting-option">
+                  <input type="checkbox" id="reverse-scalebar" />
+                  Reverse Scalebar 
+               </label>
+            </div>
+            <div id="sidebar-info">
+
+            </div>
+            <button onclick="graphController.downloadPopup();" class="trigger-download-button">Save &amp; Download</button>
+         </div>
+         <div id="logos"></div>
+      </div>
+
+      
+      <div class="backdrop js-close-download-popup js-download-popup">
+         <div class="download-outer-wrap js-close-download-popup">
+            <div class="download-inner-wrap js-close-download-popup">
+               <div id="download-content">
+                  <i class="fa fa-close pull-right js-close-download-popup"></i>
+                  <h3>Select your formats</h3>
+                  <div id="download-formats"></div>
+                  <button class="js-close-download-popup js-download">Download</button>
+               </div>
+            </div>
+         </div>
+      </div>
+
+   </body>
+</html>

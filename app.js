@@ -8,7 +8,7 @@ GLOBAL.loopback = 'http://localhost:' + config.port;
 var express = require('express');
 var app = express();
 
-
+// Load the configs
 require( root + '/app/config/express' )( app );
 require( root + '/app/routes' )( app );
 
@@ -22,7 +22,7 @@ process.on('exit', function() {
 	manager.removeAllJobs();
 });
 
-
+// Attach the routes to the application
 require( __dirname + '/app/routes' )( app );
 
 /**

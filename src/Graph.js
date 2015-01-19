@@ -1,3 +1,10 @@
+/**
+ * This file has the Graph class. The Graph
+ * class is the most used chunk of code.
+ * It takes in a plot request from the API
+ * and does the downloading of the data and producing
+ * of graphs.
+ */
 var fs   = require('fs');
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
@@ -7,24 +14,14 @@ var Lateral = require( 'lateral' ).Lateral;
 var Sequence = exports.Sequence || require('sequence').Sequence;
 var Domain = require('domain');
 var Phantom = require('phantom');
+var request = require('request');
 
-
-function phantomPage( callback ){
-	Phantom.create(function(ph){
-		setTimeout(function(){
-			ph.exit();
-		}, 60000);
-
-		ph.createPage(function( page ){
-			page.exitPhantom = function(){
-				ph.exit();
-			};
-			callback( page );
-		})
-	})
-		
-}
-
+/**
+ * Function that takes in an array of numbers
+ * and returns the sum of those numbers
+ * @param  Array arr Array of Numbers
+ * @return int       Sum of array
+ */
 function sum( arr ){
 	var total = 0;
 	
@@ -33,11 +30,22 @@ function sum( arr ){
 	
 	return total
 }
+/**
+ * Function that takes in an array of numbers
+ * and returns the average of those numbers
+ * @param  Array arr Array of Numbers
+ * @return int       Average value of array
+ */
 function avg( arr ){
 	return sum( arr ) / arr.length
 }
 
-
+/**
+ * Constructor for the Graph object.
+ * Mostly just stores so local variables and
+ * gives the code creating the class chance
+ * to add add event listeners 
+ */
 var Graph = function ( request ) {
 	EventEmitter.call( this );
 	
@@ -59,7 +67,8 @@ util.inherits(Graph, EventEmitter);
 
 var source_handlers = {};
 /**
-* Get all the valid handlers
+* Load all the source handlers from
+* the source_handlers directory
 */
 fs.readdir(__dirname +'/../source_handlers/', function(err, files){
 	if( err ) throw err;
@@ -159,18 +168,6 @@ Graph.prototype.json = function(){
 }
 
 
-/**
-* Returns the data as a CSV
-*/
-Graph.prototype.csv = function( sourceHandlerId ){
-	if( this._sourceHandlers.length <= sourceHandlerId )
-		throw new Error( "Source handler at index " + sourceHandlerId + " does not exist." );
-
-	var handler = this._sourceHandlers[ sourceHandlerId ];
-	return handler.csv()
-}
-
-
 
 ////////////////////////////////////////////////
 ////////////////// Totally not needed bellow
@@ -226,10 +223,41 @@ Graph.prototype.noninteractiveHtml = function( callback ){
 * Includes tags html, body, head, etc....
 *  - Caches results
 *
+* @param {int} width The width of the svg
+* @param {int} height The height of the svg
+* @param {Object} OPTIONAL options The options to us to produce the svg
 * @param {Function} callback The callback to return the SVG/XML
 */
-Graph.prototype.svg = function( callback ){
-	callback( 'deving....' );
+Graph.prototype.svg = function( options, callback ){
+	switch( this.type() ){
+		case "hovmollerLat":
+		case "hovmollerLon":
+			var draw = require( root + '/lib/drawHovmoller' );
+			options = extend({
+				title: this._request.plot.title,
+			}, options);
+			return draw.svg( this.type(), this.json().series, options, callback );
+		default:
+			callback( new Error( "Could not produce SVG for plot type '"+ this.type() +"'" ) );
+	}
+}
+
+
+/**
+* Produces the PNG of the graph and send it back in a callback.
+*
+* @param {int} width The width of the png
+* @param {int} height The height of the png
+* @param {Object} OPTIONAL options The options to us to produce the png
+* @param {Function} callback The callback to return the PNG buffer
+*/
+Graph.prototype.png = function( options, callback ){
+	var draw = require( root + '/lib/drawHovmoller' );
+	options = extend({
+		title: this._request.plot.title,
+	}, options);
+	draw.png( this.type(), this.json().series, options, callback );
+
 }
 
 /**
@@ -282,69 +310,6 @@ Graph.prototype.html = function(callback, settings ){
 	    });
 	});
 	
-	
-}
-
-
-Graph.prototype.loadGraphInPhantomPage = function( callback, width, height ){
-	
-	var sequence = Sequence.create();
-	var data = {};
-	
-	var domain = Domain.active;
-	
-	sequence
-		/**
-		* Creates a page in phantom and sets its view port
-		*/
-		.then(domain.bind(function( next ){
-			//logger.log('info', 'Generating phantom page', { job_id : _this.id() });
-			phantomPage(domain.bind(function (page) {
-				
-				//Set up the page
-				data.page = page;
-				data.page.set('viewportSize',{
-					width: width,
-					height: height
-				});
-				
-				//Log any JS errors on the page
-				data.page.set('onError', domain.bind(function(msg, trace) {
-					var msgStack = [ new Error('NODE ERROR (in phantom):'), 'PHANTOM ERROR: ' + msg];
-					
-					if (trace && trace.length) {
-						msgStack.push('TRACE:');
-						trace.forEach(function(t) {
-							msgStack.push(' -> ' + t.file + ': ' + t.line + (t.function ? ' (in function "' + t.function +'")' : ''));
-						});
-					}
-					throw new Error(msgStack.join('\n'));
-				}));
-				
-				//Error if resources fail to load
-				data.page.set('onResourceError', domain.bind(function(resourceError) {
-					throw new Error("Could not load PhantomJS resource: " + resourceError.url);
-				}));
-				/*
-				//Detect when the graph has finished loading
-				data.page.set('onConsoleMessage' , domain.bind(function(msg) {
-					if( msg == "graph-loaded" )
-						next();
-				}));
-				*/
-				//Load the noninteractive graph
-				data.page.open( config.serverAddress + '/job/' + domain.job.id() + '/noninteractive' , function(status) {
-					next();
-				});
-			}));
-		}))
-		
-		/**
-		* Return the page
-		*/
-		.then(function(){
-			callback( data.page );
-		})
 	
 }
 
