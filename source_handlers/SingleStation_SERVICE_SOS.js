@@ -218,13 +218,13 @@ SOS_Service.prototype.buildSourceUrl = function( dataSource, sub_series ){
 	queryData.version = "1.0.0";
 	queryData.offering = dataSource.station_name;
 	//queryData.responseFormat='text%2Fxml%3Bschema%3D"om%2F1.0.0"'
-	queryData.responseFormat='text%2Fxml%3Bsubtype%3D%22om%2F1.0.0%22'
+	queryData.responseformat='text%2Fxml%3Bsubtype%3D%22om%2F1.0.0%22'
 
 	queryData.observedproperty = sub_series.map(function(obj) {
 		return obj.observed_property;
 	}).join(',');
 
-	queryData.eventTime = dataSource.t_bounds.map(function( dateString ){
+	queryData.eventtime = dataSource.t_bounds.map(function( dateString ){
 		var date = new Date( dateString );
 		//date = date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate();
 		return date.toISOString();
