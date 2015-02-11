@@ -174,10 +174,11 @@ SOS_Service.prototype.seriesFormatters['timeseries'] = Timeseries = function(){
 		//Make a new series
 		var newSeries = {
 			label : subSeries.label, //graph name
-			key: uid(),
+			key: subSeries.yAxis.toString() + subSeries.label.substring(0,1) + '-' + uid(),		// use axis number and first letter to ensure the indicators are always in the same order
 			type : subSeries.type, //graph type (line|bar|etc...)
 			yAxis : subSeries.yAxis, //graph axis
 			values: [], // place to store the points
+			color: subSeries.color,
 		};
 
 		// At this stage _this._data is a string with values separated by _this._blockSeparator (defined 
